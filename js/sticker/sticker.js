@@ -473,8 +473,20 @@ function openStickerPanel() {
     var panel = document.getElementById('chatStickerPanel');
     if (!panel) return;
     _stickerPanelOpen = true;
-    if (!_stickerActiveGroup && _stickerGroups.length) _stickerActiveGroup = _stickerGroups[0].id;
-    renderStickerPanel();
+
+    // ★ 只显示当前角色挂载的分组
+    var visibleGroups = _getMountedStickerGroups();
+
+    // 当前激活分组若不在可见列表里，重置到第一个
+    var activeInVisible = false;
+    for (var i = 0; i < visibleGroups.length; i++) {
+        if (visibleGroups[i].id === _stickerActiveGroup) { activeInVisible = true; break; }
+    }
+    if (!activeInVisible) {
+        _stickerActiveGroup = visibleGroups.length ? visibleGroups[0].id : '';
+    }
+
+    renderStickerPanel(visibleGroups);
     panel.classList.add('show');
 }
 
@@ -484,27 +496,41 @@ function closeStickerPanel() {
     _stickerPanelOpen = false;
 }
 
-function renderStickerPanel() {
+function renderStickerPanel(visibleGroups) {
     var panel = document.getElementById('chatStickerPanel');
     if (!panel) return;
 
+    // ★ 优先用传入的已过滤分组，否则兜底用全量
+    var groups = visibleGroups !== undefined ? visibleGroups : _getMountedStickerGroups();
+
     var h = '';
-    // 分组 tabs
-    h += '<div class="stk-panel-tabs">';
-    for (var i = 0; i < _stickerGroups.length; i++) {
-        var g = _stickerGroups[i];
-        var isActive = g.id === _stickerActiveGroup;
-        h += '<div class="stk-panel-tab' + (isActive ? ' active' : '') + '" onclick="stkPanelSwitchGroup(\'' + g.id + '\')">';
-        h += escapeHtml(g.name);
+
+    // 多分组时显示 tabs
+    if (groups.length > 1) {
+        h += '<div class="stk-panel-tabs">';
+        for (var i = 0; i < groups.length; i++) {
+            var g = groups[i];
+            var isActive = g.id === _stickerActiveGroup;
+            h += '<div class="stk-panel-tab' + (isActive ? ' active' : '') + '" onclick="stkPanelSwitchGroup(\'' + g.id + '\')">';
+            h += escapeHtml(g.name);
+            h += '</div>';
+        }
         h += '</div>';
     }
-    h += '</div>';
 
-    // 表情网格
-    var curGroup = findStickerGroup(_stickerActiveGroup);
+    // 找当前激活分组
+    var curGroup = null;
+    for (var ci = 0; ci < groups.length; ci++) {
+        if (groups[ci].id === _stickerActiveGroup) { curGroup = groups[ci]; break; }
+    }
+    if (!curGroup && groups.length > 0) curGroup = groups[0];
+
     h += '<div class="stk-panel-grid" style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;padding:8px;overflow-y:auto;max-height:220px">';
-    if (!curGroup || !curGroup.stickers.length) {
-        h += '<div class="stk-panel-empty" style="grid-column:1/-1;text-align:center;padding:20px;color:#aaa;font-size:12px">暂无表情包<br>前往「我」→ 表情包管理 添加</div>';
+    if (!curGroup || !curGroup.stickers || !curGroup.stickers.length) {
+        var emptyTip = groups.length === 0
+            ? '该角色未挂载表情包<br>前往角色设置挂载表情包分组'
+            : '暂无表情包<br>前往「我」→ 表情包管理 添加';
+        h += '<div class="stk-panel-empty" style="grid-column:1/-1;text-align:center;padding:20px;color:#aaa;font-size:12px">' + emptyTip + '</div>';
     } else {
         for (var j = 0; j < curGroup.stickers.length; j++) {
             var stk = curGroup.stickers[j];
@@ -526,7 +552,8 @@ function renderStickerPanel() {
 
 function stkPanelSwitchGroup(id) {
     _stickerActiveGroup = id;
-    renderStickerPanel();
+    // ★ 切换时保持挂载过滤
+    renderStickerPanel(_getMountedStickerGroups());
 }
 
 /* ---- 发送表情包 ---- */
@@ -582,4 +609,25 @@ function renderStickerBubbleRow(m, idx, myAv, roleAv) {
     h += '<div class="chat-bubble-ts">' + (m.time || '') + '</div>';
     h += '</div></div>';
     return h;
+}
+
+/* ★ 获取当前对话角色挂载的表情包分组（已过滤，供面板使用） */
+function _getMountedStickerGroups() {
+    var mountedIds = [];
+    // 从 chat.js 的全局变量取当前对话角色
+    if (typeof _chatCurrentConv !== 'undefined' && _chatCurrentConv &&
+        typeof _chatRoles !== 'undefined' && _chatRoles) {
+        for (var i = 0; i < _chatRoles.length; i++) {
+            if (_chatRoles[i].id === _chatCurrentConv) {
+                mountedIds = _chatRoles[i].stickerIds || (_chatRoles[i].stickerId ? [_chatRoles[i].stickerId] : []);
+                break;
+            }
+        }
+    }
+    // 没有挂载 → 返回空数组（面板显示"未挂载"提示）
+    if (!mountedIds.length) return [];
+    // 从 _stickerGroups 里过滤出挂载的
+    return _stickerGroups.filter(function (g) {
+        return mountedIds.indexOf(g.id) !== -1;
+    });
 }
