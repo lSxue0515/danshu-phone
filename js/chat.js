@@ -1144,7 +1144,7 @@ function openConversation(rid) {
     h += '<div class="chat-conv-action-btn" onclick="toggleStickerPanel()" title="表情包"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg></div>';
     h += '<input class="chat-conv-input" id="chatConvInput" type="text" placeholder="说点什么..." onkeydown="if(event.key===\'Enter\'){sendChatMessage();event.preventDefault();}">';
     // 续写键
-    h += '<div class="chat-conv-action-btn send-btn" onclick="continueChat()" title="续写"><svg viewBox="0 0 24 24"><polyline points="13 17 18 12 13 7"/><polyline points="6 17 11 12 6 7"/></svg></div>';
+    h += '<div class="chat-conv-action-btn continue-btn" onclick="continueChat()" title="续写"><svg viewBox="0 0 24 24"><polyline points="13 17 18 12 13 7"/><polyline points="6 17 11 12 6 7"/></svg></div>';
     // 发送键
     h += '<div class="chat-conv-action-btn send-btn" onclick="sendChatMessage()" title="发送"><svg viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg></div>';
     h += '</div>';
@@ -2983,6 +2983,42 @@ function buildChatMessages(role) {
     sp += '系统会自动把对方刚才发的图片设置为你的头像。\n';
     sp += '只有用户明确提出换头像要求时才使用，不可随意触发。[set_avatar] 必须单独一行，不能混在文字中。\n';
 
+    // ★ 挂载表情包说明：只告知AI能发挂载的表情，并列出可用的 desc
+    var _stkIds = role.stickerIds || (role.stickerId ? [role.stickerId] : []);
+    if (_stkIds.length > 0) {
+        var _allStkGroups = [];
+        try { _allStkGroups = JSON.parse(localStorage.getItem('ds_sticker_groups') || '[]'); } catch (e) { }
+        var _mountedDescs = [];
+        for (var _si = 0; _si < _stkIds.length; _si++) {
+            for (var _gi = 0; _gi < _allStkGroups.length; _gi++) {
+                if (_allStkGroups[_gi].id === _stkIds[_si]) {
+                    var _stks = _allStkGroups[_gi].stickers || [];
+                    for (var _sti = 0; _sti < _stks.length; _sti++) {
+                        if (_stks[_sti].desc) _mountedDescs.push(_stks[_sti].desc);
+                    }
+                    break;
+                }
+            }
+        }
+        sp += '\n# 表情包系统\n';
+        if (_mountedDescs.length > 0) {
+            sp += '你可以在聊天中发送表情包，使用格式：[sticker:描述]\n';
+            sp += '[sticker:描述] 必须单独成为一个段落（前后空行隔开），不能混在文字中。\n';
+            sp += '你只能从以下已有的表情包中选择发送（根据描述文字选最合适的）：\n';
+            sp += _mountedDescs.map(function (d) { return '- ' + d; }).join('\n') + '\n';
+            sp += '如果没有合适的表情包，直接用文字回复即可，不要杜撰不存在的表情包描述。\n';
+            sp += '不能随意编造表情包描述，必须严格从上面的列表中选择。\n';
+        } else {
+            // 挂载了分组但分组里没有 desc 的表情
+            sp += '你可以发送表情包，使用格式：[sticker:简短描述] 单独成段。\n';
+            sp += '根据对话情境选择合适的情绪描述即可（如：大笑、捂脸、比心等）。\n';
+        }
+    } else {
+        // 没有挂载任何表情包 → 不让AI发表情
+        sp += '\n# 表情包系统\n';
+        sp += '当前没有为你挂载任何表情包，你不可以发送表情包（不要使用 [sticker:...] 标记）。\n';
+    }
+
     messages.push({ role: 'system', content: sp });
 
     if (role.detail && role.msgs && role.msgs.length > 0) {
@@ -3136,7 +3172,11 @@ function buildChatMessages(role) {
         // 表情包消息 — 如果有URL也传给AI看
         if (m.sticker) {
             if (m.from === 'self') {
-                var stkText = '用户发了一个表情包。请仔细观察这个表情包图片的内容，根据你看到的画面自然回应。' + (m.stickerDesc ? '（表情描述：' + m.stickerDesc + '）' : '') + '你可以用文字描述你的反应，也可以在回复中用 [sticker:表情描述] 来表示你也想发一个表情包。';
+                var _roleStkIds = role.stickerIds || (role.stickerId ? [role.stickerId] : []);
+                var _stkCanSend = _roleStkIds.length > 0;
+                var stkText = '用户发了一个表情包。请仔细观察这个表情包图片的内容，根据你看到的画面自然回应。'
+                    + (m.stickerDesc ? '（表情描述：' + m.stickerDesc + '）' : '')
+                    + (_stkCanSend ? '你可以用文字描述你的反应，也可以在回复中用 [sticker:描述] 来回发一个表情包（描述必须来自你的可用表情包列表）。' : '请用文字描述你的反应，不要发表情包（你没有挂载表情包）。');
                 if (m.stickerUrl) {
                     // 表情包URL也用多模态格式传给AI看
                     if (m.quoteText) {
