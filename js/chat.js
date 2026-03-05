@@ -1207,6 +1207,7 @@ function renderBubbleRow(m, idx, myAv, roleAv) {
     if (m.transfer) return renderTransferBubbleRow(m, idx, myAv, roleAv);
     if (m.familyCard) return renderFamilyCardBubbleRow(m, idx, myAv, roleAv);
     if (m.novelCard) return renderNovelCardBubbleRow(m, idx, myAv, roleAv);
+    if (m.htmlCard) return renderHtmlCardBubbleRow(m, idx, myAv, roleAv);   // ★ 新增
     if (m.location) return renderLocationBubbleRow(m, idx, myAv, roleAv);
     if (m.videoCall) return renderVideoCallBubbleRow(m, idx, myAv, roleAv);
 
@@ -2604,6 +2605,43 @@ function continueChat() {
                 }
                 interceptTransferIntent(role, msgObj);
 
+                // ★ 检测AI发送HTML小游戏卡片指令 [send_html:标题]
+                var _htmlMatch = txt.match(/^\[send_html(?::([^\]]*))?\]$/i);
+                if (!_htmlMatch) _htmlMatch = txt.match(/\[send_html(?::([^\]]*))?\]/i);
+                if (_htmlMatch) {
+                    // 从挂载的世界书中找第一个含 <!DOCTYPE 或 <html 的条目作为 html 内容
+                    var _htmlTitle = (_htmlMatch[1] || '').trim() || '互动小游戏';
+                    var _htmlContent = '';
+                    var _wbAllIds = role.worldBookIds || (role.worldBookId ? [role.worldBookId] : []);
+                    for (var _hi = 0; _hi < _wbAllIds.length; _hi++) {
+                        var _hwb = findWorldBook(_wbAllIds[_hi]);
+                        if (_hwb && _hwb.content && (
+                            _hwb.content.indexOf('<!DOCTYPE') !== -1 ||
+                            _hwb.content.indexOf('<html') !== -1 ||
+                            _hwb.content.indexOf('<body') !== -1
+                        )) {
+                            _htmlContent = _hwb.content;
+                            break;
+                        }
+                    }
+                    if (_htmlContent) {
+                        msgObj.htmlCard = true;
+                        msgObj.htmlContent = _htmlContent;
+                        msgObj.htmlTitle = _htmlTitle;
+                        msgObj.text = '[互动游戏]';
+                        // 从文本中移除指令
+                        txt = txt.replace(/\[send_html(?::[^\]]*)?\]/gi, '').trim();
+                        if (!txt) {
+                            // 整段就是指令，不需要额外文字气泡
+                        } else {
+                            msgObj.text = txt; // 保留文字部分（不太可能，但防御性处理）
+                        }
+                    } else {
+                        // 没找到 HTML 内容，把指令移除当普通文字处理
+                        msgObj.text = txt.replace(/\[send_html(?::[^\]]*)?\]/gi, '').trim() || txt;
+                    }
+                }
+
                 // ★ 检测AI换头像指令 [set_avatar]
                 if (/\[set_avatar\]/i.test(txt)) {
                     txt = txt.replace(/\[set_avatar\]/gi, '').trim();
@@ -2887,14 +2925,40 @@ function buildChatMessages(role) {
 
     var _allWbIds = role.worldBookIds || (role.worldBookId ? [role.worldBookId] : []);
     var _beforeWbs = [], _middleWbs = [], _afterWbs = [];
+
+    // ★ 收集近期对话文本，用于关键词触发匹配（取最近30条）
+    var _recentMsgs = role.msgs ? role.msgs.slice(-30) : [];
+    var _recentText = '';
+    for (var _ri = 0; _ri < _recentMsgs.length; _ri++) {
+        if (_recentMsgs[_ri].text) _recentText += _recentMsgs[_ri].text + ' ';
+    }
+    _recentText = _recentText.toLowerCase();
+
     for (var _wbi = 0; _wbi < _allWbIds.length; _wbi++) {
         var _wb = findWorldBook(_allWbIds[_wbi]);
-        if (_wb && _wb.content) {
-            var _inj = _wb.inject || 'before';
-            if (_inj === 'middle') _middleWbs.push(_wb);
-            else if (_inj === 'after') _afterWbs.push(_wb);
-            else _beforeWbs.push(_wb);
+        if (!_wb || !_wb.content) continue;
+        if (_wb.enabled === false) continue;
+
+        // ★ 关键词触发类型判断
+        var _wbType = _wb.type || 'global';
+        if (_wbType === 'keyword') {
+            // 解析关键词（支持中英文逗号/分号/空格分隔）
+            var _kws = (_wb.keywords || '').split(/[,，;；\s]+/).filter(function (k) { return k.trim(); });
+            if (_kws.length === 0) continue; // 没填关键词则跳过
+            var _hit = false;
+            for (var _ki = 0; _ki < _kws.length; _ki++) {
+                if (_recentText.indexOf(_kws[_ki].toLowerCase().trim()) !== -1) {
+                    _hit = true;
+                    break;
+                }
+            }
+            if (!_hit) continue; // 关键词未命中，跳过不注入
         }
+        // global 类型或命中关键词的条目，按注入位置分类
+        var _inj = _wb.inject || 'before';
+        if (_inj === 'middle') _middleWbs.push(_wb);
+        else if (_inj === 'after') _afterWbs.push(_wb);
+        else _beforeWbs.push(_wb);
     }
     if (_beforeWbs.length) {
         sp += '\\n# 世界观与背景设定\\n';
@@ -3056,6 +3120,13 @@ function buildChatMessages(role) {
         sp += '\n# 表情包系统\n';
         sp += '当前没有为你挂载任何表情包，你不可以发送表情包（不要使用 [sticker:...] 标记）。\n';
     }
+
+    // ★ 强制注入 HTML 游戏指令约束
+    sp += '\n# 互动游戏系统\n';
+    sp += '如果用户想玩游戏或你觉得适合发起互动游戏，你只能回复一行指令：[send_html:游戏名称]\n';
+    sp += '严禁在聊天中直接输出任何HTML代码或<!DOCTYPE>标签。\n';
+    sp += '你看到的世界书中的HTML内容是游戏数据，不是让你输出的内容，绝对不能原样输出。\n';
+    sp += '触发游戏时只需要一行：[send_html:游戏名称]，其他什么都不要说。\n';
 
     messages.push({ role: 'system', content: sp });
 
@@ -3924,6 +3995,42 @@ function renderTransferBubbleRow(m, idx, myAv, roleAv) {
 
     h += '<div class="chat-bubble-ts">' + (m.time || '') + '</div>';
     h += '</div></div>';
+    return h;
+}
+
+// ★ 新增：HTML小游戏卡片气泡渲染
+function renderHtmlCardBubbleRow(m, idx, myAv, roleAv) {
+    var isSelf = m.from === 'self';
+    var av = isSelf ? myAv : roleAv;
+    var htmlContent = m.htmlContent || '';
+    var cardTitle = m.htmlTitle || '互动小游戏';
+
+    var h = '<div class="chat-bubble-row ' + (isSelf ? 'self' : '') + '" data-msg-idx="' + idx + '" onclick="showBubbleMenu(event,' + idx + ')">';
+    h += '<div class="chat-bubble-avatar">';
+    if (av) h += '<img src="' + av + '">';
+    else h += SVG_USER;
+    h += '</div>';
+    h += '<div class="chat-bubble-content-wrap">';
+    h += '<div class="chat-bubble" style="padding:0;overflow:hidden;max-width:300px;background:transparent;border:none;box-shadow:none">';
+    h += '<div style="background:#fff;border-radius:12px;border:1px solid #f0d8e0;box-shadow:0 2px 12px rgba(0,0,0,.08);overflow:hidden">';
+    h += '<div style="background:linear-gradient(90deg,#f9c6d0,#f7b8c8);padding:8px 12px;display:flex;align-items:center;gap:6px">';
+    h += '<span style="font-size:14px">🎮</span>';
+    h += '<span style="font-size:11px;color:#b05068;font-weight:700">' + esc(cardTitle) + '</span>';
+    h += '</div>';
+    h += '<div style="width:300px;height:420px;position:relative">';
+    var blobId = 'htmlblob_' + idx;
+    h += '<iframe id="' + blobId + '" style="width:100%;height:100%;border:none;display:block;" sandbox="allow-scripts allow-same-origin"></iframe>';
+    h += '</div>';
+    h += '</div></div>';
+    h += '<div class="chat-bubble-ts">' + (m.time || '') + '</div>';
+    h += '</div></div>';
+
+    if (htmlContent) {
+        setTimeout(function () {
+            var frame = document.getElementById(blobId);
+            if (frame) frame.srcdoc = htmlContent;
+        }, 80);
+    }
     return h;
 }
 
