@@ -233,9 +233,13 @@ function renderMessages() {
         var r = sorted[i];
         h += '<div class="chat-msg-item" onclick="openConversation(\'' + r.id + '\')" oncontextmenu="event.preventDefault();showRoleContextMenu(event,\'' + r.id + '\')">';
         h += '<div class="chat-msg-avatar">' + (r.avatar ? '<img src="' + r.avatar + '" alt="">' : SVG_USER) + '</div>';
-        h += '<div class="chat-msg-info"><div class="chat-msg-name">' + esc(r.nickname || r.name) + '</div><div class="chat-msg-preview">' + esc(r.lastMsg || '暂无消息') + '</div></div>';
-        h += '<div class="chat-msg-meta"><div class="chat-msg-time">' + (r.lastTimeStr || '') + '</div>';
+        h += '<div class="chat-msg-info">';
+        h += '<div class="chat-msg-name-row">' + esc(r.remark || r.name)
+            + '<span class="chat-msg-time">' + (r.lastTimeStr || '') + '</span></div>';
+        h += '<div class="chat-msg-preview-row">';
+        h += '<div class="chat-msg-preview">' + esc(r.lastMsg || '') + '</div>';
         if (r.unread > 0) h += '<div class="chat-msg-badge">' + r.unread + '</div>';
+        h += '</div>';
         h += '</div></div>';
     }
     h += '</div>';
@@ -244,7 +248,7 @@ function renderMessages() {
 function filterMessages(kw) {
     kw = kw.toLowerCase();
     document.querySelectorAll('.chat-msg-item').forEach(function (el) {
-        var n = el.querySelector('.chat-msg-name').textContent.toLowerCase();
+        var n = el.querySelector('.chat-msg-name-row').textContent.toLowerCase();
         var p = el.querySelector('.chat-msg-preview').textContent.toLowerCase();
         el.style.display = (n.indexOf(kw) !== -1 || p.indexOf(kw) !== -1) ? '' : 'none';
     });
@@ -318,7 +322,11 @@ function renderContacts() {
             h += '<div class="chat-contact-item" onclick="openConversation(\'' + c.id + '\')" oncontextmenu="event.preventDefault();showRoleContextMenu(event,\'' + c.id + '\')">';
             h += '<div class="chat-contact-avatar">' + (c.avatar ? '<img src="' + c.avatar + '" alt="">' : SVG_USER) + '</div>';
             h += '<div class="chat-contact-info">';
-            h += '<div class="chat-contact-name">' + esc(c.nickname || c.name) + '</div>';
+            h += '<div class="chat-contact-name">' + esc(c.name)
+                + (c.nickname && c.nickname !== c.name
+                    ? '<span style="font-size:10px;opacity:0.55;margin-left:3px;">(' + esc(c.nickname) + ')</span>'
+                    : '')
+                + '</div>'
             if (c.group && c.group !== '默认') h += '<div class="chat-contact-group-tag">' + esc(c.group) + '</div>';
             h += '</div>';
             if (c.gender) h += '<div class="chat-contact-gender ' + c.gender + '">' + (c.gender === 'male' ? '男' : '女') + '</div>';
@@ -1055,7 +1063,7 @@ function openConversation(rid) {
     _chatMultiSelectMode = false; _chatMultiSelected = []; _chatQuoteData = null;
 
     var conv = document.getElementById('chatConversation'); if (!conv) return;
-    var dn = esc(role.nickname || role.name);
+    var dn = esc(role.remark || role.name);
     var customLabel = role.customLabel || '';
     var ap = getActivePersona();
     var myAv = ap && ap.avatar ? ap.avatar : '';
@@ -1097,7 +1105,7 @@ function openConversation(rid) {
         if (i === 0 || (i > 0 && msgs[i].time !== msgs[i - 1].time))
             h += '<div class="chat-bubble-time-center">' + m.time + '</div>';
         if (m.recalled) {
-            h += '<div class="chat-bubble-recalled">' + (m.from === 'self' ? '你' : esc(role.nickname || role.name)) + ' 撤回了一条消息</div>';
+            h += '<div class="chat-bubble-recalled">' + (m.from === 'self' ? '你' : esc(role.remark || role.name)) + ' 撤回了一条消息</div>';
             continue;
         }
         // ★ 人设变更提示条（居中小字提示）
@@ -1381,7 +1389,7 @@ function openConvPersonaSwitcher() {
     h += '<div class="conv-persona-switcher-panel">';
 
     h += '<div class="conv-persona-switcher-header">';
-    h += '<div class="conv-persona-switcher-title">为「' + esc(role.nickname || role.name) + '」选择人设</div>';
+    h += '<div class="conv-persona-switcher-title">为「' + esc(role.remark || role.name) + '」选择人设</div>';
     h += '<div class="conv-persona-switcher-close" onclick="closeConvPersonaSwitcher()">';
     h += '<svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
     h += '</div></div>';
@@ -1530,7 +1538,7 @@ function openChatSettings() {
 
     var conv = document.getElementById('chatConversation'); if (!conv) return;
 
-    var dn = esc(role.nickname || role.name);
+    var dn = esc(role.remark || role.name);
     var roleAv = role.avatar || '';
     var customLabel = role.customLabel || '';
     var curGroup = role.group || '默认';
@@ -1571,7 +1579,7 @@ function openChatSettings() {
     // 备注
     h += '<div class="chat-settings-section">';
     h += '<div class="chat-settings-label">备注名称</div>';
-    h += '<input type="text" class="chat-settings-input" id="csNickname" value="' + esc(role.nickname || '') + '" placeholder="设置备注名">';
+    h += '<input type="text" class="chat-settings-input" id="csNickname" value="' + esc(role.remark || '') + '" placeholder="设置备注名">';
     h += '</div>';
 
     // 自定义标签
@@ -2054,7 +2062,7 @@ function settingsClearChat() {
 
 function settingsDeleteFriend() {
     var role = findRole(_chatCurrentConv); if (!role) return;
-    if (!confirm('确认删除好友「' + (role.nickname || role.name) + '」？所有消息将被清除，此操作不可恢复。')) return;
+    if (!confirm('确认删除好友「' + (role.remark || role.name) + '」？所有消息将被清除，此操作不可恢复。')) return;
     _chatRoles = _chatRoles.filter(function (r) { return r.id !== role.id; });
     saveChatRoles();
     closeChatSettingsPanel();
@@ -2064,8 +2072,7 @@ function settingsDeleteFriend() {
 
 function saveChatSettings() {
     var role = findRole(_chatCurrentConv); if (!role) return;
-    var nickname = document.getElementById('csNickname').value.trim();
-    role.nickname = nickname;
+    role.remark = document.getElementById('csNickname').value.trim();
     role.customLabel = document.getElementById('csCustomLabel').value.trim();
     role.group = document.getElementById('csGroup').value;
     role.translateOn = document.getElementById('csTranslate').checked;
@@ -2330,8 +2337,6 @@ function sendChatMessage() {
         inp.value = '';
         clearQuote();
         clearPendingImage();
-        // ★ 修复：发送图片后自动触发AI回复
-        continueChat();
         return;
     }
 
@@ -2602,7 +2607,7 @@ function continueChat() {
                 // ★ 检测AI换头像指令 [set_avatar]
                 if (/\[set_avatar\]/i.test(txt)) {
                     txt = txt.replace(/\[set_avatar\]/gi, '').trim();
-                    msgObj.text = txt || '好～';
+                    msgObj.text = txt;
                     var _newAv = _chatLastUserImageCache[role.id] || null;
                     if (_newAv) {
                         (function (roleRef, imgData) {
@@ -2631,6 +2636,39 @@ function continueChat() {
                             }, 400);
                         })(role, _newAv);
                     }
+                }
+
+                // ★ 检测AI换头像指令 [set_avatar]
+                if (/\[set_avatar\]/i.test(txt)) {
+                    txt = txt.replace(/\[set_avatar\]/gi, '').trim();
+                    msgObj.text = txt;  // ✅ 不再兜底填'好～'
+                    var _newAv = _chatLastUserImageCache[role.id] || null;
+                    if (_newAv) {
+                        (function (roleRef, imgData) {
+                            setTimeout(function () {
+                                roleRef.avatar = imgData;
+                                _convLeftAvatar = imgData;
+                                saveChatRoles();
+                                var avEl = document.getElementById('convAvLeft');
+                                if (avEl) { avEl.src = imgData; }
+                                else {
+                                    var box = document.querySelectorAll('.chat-conv-av-box')[0];
+                                    if (box) box.innerHTML = '<img src="' + imgData + '" id="convAvLeft" alt="">';
+                                }
+                                var bubbleAvs = document.querySelectorAll('.chat-bubble-row .chat-bubble-avatar');
+                                for (var bi = 0; bi < bubbleAvs.length; bi++) {
+                                    var bImg = bubbleAvs[bi].querySelector('img');
+                                    if (bImg && !bImg.closest('.chat-bubble-row.self')) {
+                                        bImg.src = imgData;
+                                    }
+                                }
+                                showToast(roleRef.name + ' 已更换头像');
+                                if (_chatCurrentTab === 'messages') renderChatTab('messages');
+                            }, 400);
+                        })(role, _newAv);
+                    }
+                    // ✅ 新增：如果删完指令后文字为空，跳过这条消息，不渲染气泡
+                    if (!msgObj.text) continue;  // 这里是在 for 循环里，continue 跳过当前 segment
                 }
 
                 role.msgs.push(msgObj);
@@ -2800,7 +2838,7 @@ function buildChatMessages(role) {
 
     var userName = (persona && persona.name) ? persona.name : '用户';
     var userNickname = (persona && persona.nickname) ? persona.nickname : '';
-    var charName = role.nickname || role.name;
+    var charName = role.name;  // AI始终以真实姓名为主身份
 
     var sp = '';
 
@@ -2815,7 +2853,7 @@ function buildChatMessages(role) {
     sp += '## 基本信息\n';
     sp += '- 角色全名：' + (role.name || '未知') + '\n';
     if (role.nickname && role.nickname !== role.name) {
-        sp += '- 备注/昵称：' + role.nickname + '（对话中' + userName + '可能这样称呼你）\n';
+        sp += '- 小名/外号：' + role.nickname + '（这只是' + userName + '给你起的小名或外号，你的真实全名仍然是「' + role.name + '」，不要用小名自我介绍，但可以接受对方这样叫你）\n';
     }
 
     if (role.gender === 'male') {
@@ -3025,7 +3063,7 @@ function buildChatMessages(role) {
         var charIntro = '（角色状态初始化：我是' + role.name + '。';
         if (role.gender === 'male') charIntro += '我是男性。';
         else if (role.gender === 'female') charIntro += '我是女性。';
-        if (role.nickname && role.nickname !== role.name) charIntro += '大家也叫我' + role.nickname + '。';
+        if (role.nickname && role.nickname !== role.name) charIntro += '用户有时叫我「' + role.nickname + '」（这是我的小名/外号，不是全名）。';
         charIntro += '我正在和' + userName + '聊天。';
         if (persona && persona.gender === 'male') charIntro += userName + '是一位男性。';
         else if (persona && persona.gender === 'female') charIntro += userName + '是一位女性。';
@@ -3169,27 +3207,20 @@ function buildChatMessages(role) {
             }
         }
 
-        // 表情包消息 — 如果有URL也传给AI看
+        // 表情包消息 — 只传描述文字，不传图片URL（GIF动图会导致API 500）
         if (m.sticker) {
             if (m.from === 'self') {
                 var _roleStkIds = role.stickerIds || (role.stickerId ? [role.stickerId] : []);
                 var _stkCanSend = _roleStkIds.length > 0;
-                var stkText = '用户发了一个表情包。请仔细观察这个表情包图片的内容，根据你看到的画面自然回应。'
-                    + (m.stickerDesc ? '（表情描述：' + m.stickerDesc + '）' : '')
-                    + (_stkCanSend ? '你可以用文字描述你的反应，也可以在回复中用 [sticker:描述] 来回发一个表情包（描述必须来自你的可用表情包列表）。' : '请用文字描述你的反应，不要发表情包（你没有挂载表情包）。');
-                if (m.stickerUrl) {
-                    // 表情包URL也用多模态格式传给AI看
-                    if (m.quoteText) {
-                        stkText = '【引用：' + m.quoteName + '说"' + m.quoteText + '"】\n' + stkText;
-                    }
-                    messages.push({
-                        role: 'user',
-                        content: [
-                            { type: 'text', text: stkText },
-                            { type: 'image_url', image_url: { url: m.stickerUrl, detail: 'low' } }
-                        ]
-                    });
-                    continue;
+                var stkDesc = m.stickerDesc || '';
+                var stkText = '用户发了一个表情包'
+                    + (stkDesc ? '，这个表情包的内容/描述是：「' + stkDesc + '」' : '（未知内容）')
+                    + '。请根据表情包描述理解用户的情绪或意图，并自然地回应。'
+                    + (_stkCanSend
+                        ? '你也可以在回复中用 [sticker:描述] 回发一个表情包（描述必须来自你的可用表情包列表）。'
+                        : '请用文字描述你的反应，不要发表情包（你没有挂载表情包）。');
+                if (m.quoteText) {
+                    stkText = '【引用：' + m.quoteName + '说"' + m.quoteText + '"】\n' + stkText;
                 }
                 content = stkText;
             } else {
