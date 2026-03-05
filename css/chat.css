@@ -5748,3 +5748,37 @@
 .voice-recorder-overlay {
     border-radius: 0 !important;
 }
+
+.chat-msg-info {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 3px;
+}
+
+.chat-msg-name-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 14px;
+    font-weight: 500;
+    color: #333;
+}
+
+.chat-msg-preview-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.chat-msg-preview {
+    font-size: 12px;
+    color: #999;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    flex: 1;
+    min-width: 0;
+}
