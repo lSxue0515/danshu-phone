@@ -167,17 +167,7 @@ function openChatApp() {
 }
 function closeChatApp() {
     var o = document.getElementById('chatAppOverlay');
-    if (o) {
-        // ★ 先强制移除所有子元素的 backdrop-filter，防止 Android 糊屏残影
-        o.style.backdropFilter = 'none';
-        o.style.webkitBackdropFilter = 'none';
-        // 稍微延迟再移除 show，让浏览器来得及清除 blur 层
-        setTimeout(function () {
-            o.style.backdropFilter = '';
-            o.style.webkitBackdropFilter = '';
-            o.classList.remove('show');
-        }, 30);
-    }
+    if (o) o.classList.remove('show');
     closeChatConversation(); closeCreateRole(); closeChatMenu();
     closeProfilePage(); closePersonaEditor();
 }
@@ -1160,7 +1150,7 @@ function openConversation(rid) {
     // 输入行 — 续写在左，发送在右
     h += '<div class="chat-conv-input-row" id="chatInputRow">';
     h += '<div class="chat-conv-action-btn" onclick="toggleStickerPanel()" title="表情包"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg></div>';
-    h += '<input class="chat-conv-input" id="chatConvInput" type="text" placeholder="说点什么..." onkeydown="if(event.key===\'Enter\'){event.preventDefault();event.stopPropagation();sendChatMessage();}">';
+    h += '<input class="chat-conv-input" id="chatConvInput" type="text" placeholder="说点什么..." onkeydown="if(event.key===\'Enter\'){sendChatMessage();event.preventDefault();}">';
     // 续写键
     h += '<div class="chat-conv-action-btn continue-btn" onclick="continueChat()" title="续写"><svg viewBox="0 0 24 24"><polyline points="13 17 18 12 13 7"/><polyline points="6 17 11 12 6 7"/></svg></div>';
     // 发送键
@@ -1179,6 +1169,8 @@ function openConversation(rid) {
 
     conv.innerHTML = h;
     conv.classList.add('show');
+    var chatInput = document.getElementById('chatConvInput');
+    if (chatInput) chatInput.addEventListener('keydown', handleChatInputKeydown, true);
     // ★ 壁纸：先立即应用一次，再在 setTimeout 里补一次（双保险）
     var _wpData = loadWallpaper(rid);
     if (_wpData) {
@@ -2308,6 +2300,19 @@ function updateLastMsg(role) {
    ================================================================ */
 
 var _chatGenerating = false;
+
+function handleChatInputKeydown(event) {
+    if (!event || event.key !== 'Enter') return;
+    if (event.shiftKey || event.ctrlKey || event.altKey || event.metaKey) return;
+    if (event.isComposing || event.keyCode === 229) return;
+
+    event.preventDefault();
+    event.stopPropagation();
+    if (typeof event.stopImmediatePropagation === 'function') event.stopImmediatePropagation();
+
+    sendChatMessage();
+    return false;
+}
 
 function sendChatMessage() {
     var inp = document.getElementById('chatConvInput'); if (!inp) return;
