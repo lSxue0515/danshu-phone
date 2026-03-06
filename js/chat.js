@@ -1061,6 +1061,7 @@ function openConversation(rid) {
     var role = findRole(rid); if (!role) return;
     _chatCurrentConv = rid; role.unread = 0; saveChatRoles();
     _chatMultiSelectMode = false; _chatMultiSelected = []; _chatQuoteData = null;
+    if (typeof closeBeautifyPage === 'function') closeBeautifyPage();
 
     var conv = document.getElementById('chatConversation'); if (!conv) return;
     var dn = esc(role.remark || role.name);

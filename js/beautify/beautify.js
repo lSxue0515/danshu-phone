@@ -7,6 +7,9 @@ var _bfActiveCssId = '';
 
 /* ========== 打开 / 关闭 ========== */
 function openBeautifyPage() {
+    var conv = document.getElementById('chatConversation');
+    if (conv && conv.classList.contains('show')) return;
+
     var page = document.getElementById('beautifyPage');
     if (!page) return;
     loadBeautifyState();
