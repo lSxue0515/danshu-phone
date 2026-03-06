@@ -5,12 +5,28 @@
     <meta charset="UTF-8">
     <meta name="viewport"
         content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+
+    <!-- ★ PWA：添加到主屏后全屏运行（iOS + Android） ★ -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="theme-color" content="transparent">
+    <meta name="theme-color" media="(prefers-color-scheme: light)" content="transparent">
+    <meta name="theme-color" media="(prefers-color-scheme: dark)" content="transparent">
+
     <script>
         (function () {
             var u = navigator.userAgent || '';
             var h = document.documentElement;
             if (/Android/i.test(u)) h.classList.add('is-android');
             if (/iPhone|iPad|iPod/i.test(u) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)) h.classList.add('is-ios');
+            // 检测是否 PWA standalone 模式（添加到主屏后）
+            if (window.matchMedia('(display-mode: standalone)').matches
+                || window.navigator.standalone === true) {
+                h.classList.add('is-standalone');
+            }
+            // 检测安卓 WebView / 各大浏览器
+            if (/wv\)|WebView/i.test(u)) h.classList.add('is-webview');
         })();
     </script>
     <title>蛋薯机 DanShu Pro</title>
@@ -56,6 +72,9 @@
     <link rel="stylesheet" href="css/theater.css">
     <link rel="stylesheet" href="css/forum.css">
     <link rel="stylesheet" href="css/phonesnoop.css">
+    <!-- PWA manifest（可选，让"添加到主屏"更完整） -->
+    <link rel="manifest" href="manifest.json">
+
 
 
 
@@ -1923,6 +1942,62 @@
     <script src="js/page3widget.js"></script>
     <script src="js/phonesnoop.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/jsmediatags@3.9.7/dist/jsmediatags.min.js"></script>
+
+    <script>
+        /* ★ 安卓状态栏高度修复 ★
+           安卓浏览器 env(safe-area-inset-top) 常返回 0，
+           用 JS 检测屏幕和窗口差值来估算 */
+        (function () {
+            var h = document.documentElement;
+
+            function fixAndroidStatusBar() {
+                if (!h.classList.contains('is-android')) return;
+
+                // 方法1：用 screen.height - window.innerHeight 差值（含地址栏误差，仅做估算）
+                // 方法2：更可靠——直接读 CSS env() 是否生效
+                var testEl = document.createElement('div');
+                testEl.style.cssText = 'position:fixed;top:env(safe-area-inset-top,0px);left:0;width:1px;height:1px;pointer-events:none;visibility:hidden;';
+                document.body.appendChild(testEl);
+                var top = testEl.getBoundingClientRect().top;
+                document.body.removeChild(testEl);
+
+                // 如果 env() 有效且 > 0，就用它；否则用 24px 安卓默认估算
+                var safeTop = top > 4 ? top : 24;
+                h.style.setProperty('--android-status-bar-height', safeTop + 'px');
+            }
+
+            // DOM ready 后执行
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', fixAndroidStatusBar);
+            } else {
+                fixAndroidStatusBar();
+            }
+
+            // 旋转/resize 后重新计算
+            window.addEventListener('resize', fixAndroidStatusBar);
+
+            // ★ 尝试触发浏览器全屏 API（安卓 Chrome 支持）★
+            function tryRequestFullscreen() {
+                var el = document.documentElement;
+                var fn = el.requestFullscreen
+                    || el.webkitRequestFullscreen
+                    || el.mozRequestFullScreen
+                    || el.msRequestFullscreen;
+                if (fn) {
+                    // 必须在用户手势里调用，所以监听第一次 touch
+                    document.addEventListener('touchstart', function onFirstTouch() {
+                        document.removeEventListener('touchstart', onFirstTouch);
+                        fn.call(el).catch(function () { });
+                    }, { once: true, passive: true });
+                }
+            }
+
+            // 仅安卓、非 standalone 模式下尝试全屏
+            if (h.classList.contains('is-android') && !h.classList.contains('is-standalone')) {
+                tryRequestFullscreen();
+            }
+        })();
+    </script>
 
 
 
