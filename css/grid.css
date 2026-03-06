@@ -4,7 +4,9 @@
 
 /* ★ 关键修复：pages-viewport 不能用 flex:1 无限撑开 */
 .pages-viewport {
-    height: calc(100% - var(--status-bar-height) - var(--dock-height) - var(--page-dots-height) - var(--home-indicator-height));
+    height: calc(var(--app-height, 100vh) - var(--status-bar-height) - var(--dock-height) - var(--page-dots-height) - var(--home-indicator-height));
+    min-height: 0;
+    max-height: calc(var(--app-height, 100vh) - var(--status-bar-height) - var(--dock-height) - var(--page-dots-height) - var(--home-indicator-height));
     overflow: hidden;
     position: relative;
     z-index: 5;
@@ -16,6 +18,7 @@
     display: flex;
     width: 300%;
     height: 100%;
+    min-height: 0;
     transition: transform 0.45s cubic-bezier(0.25, 0.46, 0.45, 0.94);
     will-change: transform;
 }
@@ -28,6 +31,7 @@
     width: 33.333%;
     /* ★★★ 这里！原来50%，必须改成33.333% ★★★ */
     height: 100%;
+    min-height: 0;
     overflow-y: auto;
     overflow-x: hidden;
     padding: 10px 20px 0;
