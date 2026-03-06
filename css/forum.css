@@ -1000,3 +1000,37 @@
         opacity: 0.3
     }
 }
+
+/* ======================
+   论坛：方角铺满
+   ====================== */
+
+/* 论坛overlay容器：去掉圆角、铺满 */
+#forumOverlay {
+    border-radius: 0 !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    margin: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
+}
+
+/* 论坛内部fm-app也方角铺满 */
+#forumOverlay .fm-app {
+    border-radius: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
+    margin: 0 !important;
+}
+
+/* 论坛顶栏方角 */
+#forumOverlay .fm-topbar {
+    border-radius: 0 !important;
+}
+
+/* 底部导航栏方角 */
+#forumOverlay .fm-dock {
+    border-radius: 0 !important;
+}
