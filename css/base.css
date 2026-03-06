@@ -321,13 +321,18 @@ body {
 
     .page-dots {
         margin: 0 !important;
-        padding: 4px 0 calc(4px + env(safe-area-inset-bottom, 0px)) !important;
+        padding: 4px 0 !important;
         flex-shrink: 0;
     }
 
     .dock-container {
-        padding-bottom: max(0px, env(safe-area-inset-bottom, 0px)) !important;
+        padding: 0 24px calc(10px + env(safe-area-inset-bottom, 0px)) !important;
+        align-items: flex-end !important;
         flex-shrink: 0;
+    }
+
+    .dock-container::before {
+        bottom: env(safe-area-inset-bottom, 0px) !important;
     }
 
     .page-1 > .grid-container {
