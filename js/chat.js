@@ -1170,7 +1170,7 @@ function openConversation(rid) {
     conv.innerHTML = h;
     conv.classList.add('show');
     var chatInput = document.getElementById('chatConvInput');
-    if (chatInput) chatInput.addEventListener('keydown', handleChatInputKeydown);
+    if (chatInput) chatInput.addEventListener('keydown', handleChatInputKeydown, true);
     // ★ 壁纸：先立即应用一次，再在 setTimeout 里补一次（双保险）
     var _wpData = loadWallpaper(rid);
     if (_wpData) {
