@@ -5,28 +5,12 @@
     <meta charset="UTF-8">
     <meta name="viewport"
         content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-
-    <!-- ★ PWA：添加到主屏后全屏运行（iOS + Android） ★ -->
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="mobile-web-app-capable" content="yes">
-    <meta name="theme-color" content="transparent">
-    <meta name="theme-color" media="(prefers-color-scheme: light)" content="transparent">
-    <meta name="theme-color" media="(prefers-color-scheme: dark)" content="transparent">
-
     <script>
         (function () {
             var u = navigator.userAgent || '';
             var h = document.documentElement;
             if (/Android/i.test(u)) h.classList.add('is-android');
             if (/iPhone|iPad|iPod/i.test(u) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)) h.classList.add('is-ios');
-            // 检测是否 PWA standalone 模式（添加到主屏后）
-            if (window.matchMedia('(display-mode: standalone)').matches
-                || window.navigator.standalone === true) {
-                h.classList.add('is-standalone');
-            }
-            // 检测安卓 WebView / 各大浏览器
-            if (/wv\)|WebView/i.test(u)) h.classList.add('is-webview');
         })();
     </script>
     <title>蛋薯机 DanShu Pro</title>
@@ -72,9 +56,6 @@
     <link rel="stylesheet" href="css/theater.css">
     <link rel="stylesheet" href="css/forum.css">
     <link rel="stylesheet" href="css/phonesnoop.css">
-    <!-- PWA manifest（可选，让"添加到主屏"更完整） -->
-    <link rel="manifest" href="manifest.json">
-
 
 
 
@@ -1070,6 +1051,22 @@
                     <div class="api-section">
                         <div class="api-section-title">
                             <svg viewBox="0 0 24 24" width="14" height="14">
+                                <line x1="8" y1="6" x2="21" y2="6" />
+                                <line x1="8" y1="12" x2="21" y2="12" />
+                                <line x1="8" y1="18" x2="21" y2="18" />
+                                <line x1="3" y1="6" x2="3.01" y2="6" />
+                                <line x1="3" y1="12" x2="3.01" y2="12" />
+                                <line x1="3" y1="18" x2="3.01" y2="18" />
+                            </svg>
+                            已保存的预设
+                        </div>
+                        <div class="api-preset-list" id="apiPresetList">
+                            <div class="api-preset-empty">暂无预设，保存后将显示在这里</div>
+                        </div>
+                    </div>
+                    <div class="api-section">
+                        <div class="api-section-title">
+                            <svg viewBox="0 0 24 24" width="14" height="14">
                                 <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
                                 <polyline points="7 10 12 15 17 10" />
                                 <line x1="12" y1="15" x2="12" y2="3" />
@@ -1096,817 +1093,809 @@
                         </div>
                         <input type="file" id="apiImportFile" class="api-import-file" accept=".json"
                             onchange="handleApiImport(event)">
-                    </div>
-                    <div class="api-section">
-                        <div class="api-section-title">
-                            <svg viewBox="0 0 24 24" width="14" height="14">
-                                <line x1="8" y1="6" x2="21" y2="6" />
-                                <line x1="8" y1="12" x2="21" y2="12" />
-                                <line x1="8" y1="18" x2="21" y2="18" />
-                                <line x1="3" y1="6" x2="3.01" y2="6" />
-                                <line x1="3" y1="12" x2="3.01" y2="12" />
-                                <line x1="3" y1="18" x2="3.01" y2="18" />
-                            </svg>
-                            已保存的预设
-                        </div>
-                        <div class="api-preset-list" id="apiPresetList">
-                            <div class="api-preset-empty">暂无预设，保存后将显示在这里</div>
+                        <div class="api-data-row" style="margin-top:8px;">
+                            <div class="api-data-btn" onclick="dsNukeAllData()"
+                                style="background:rgba(200,40,40,0.12);border-color:rgba(200,40,40,0.22);color:rgba(170,30,30,0.9);font-weight:600;">
+                                <svg viewBox="0 0 24 24" width="14" height="14">
+                                    <polyline points="3 6 5 6 21 6" />
+                                    <path
+                                        d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                                    <line x1="10" y1="11" x2="10" y2="17" />
+                                    <line x1="14" y1="11" x2="14" y2="17" />
+                                </svg>
+                                ⚠️ 清除所有数据
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
+    </div>
+    </div>
 
-        <!-- ====== 外观设置面板 ====== -->
-        <div class="appear-app-overlay" id="appearAppOverlay">
-            <div class="appear-app-panel">
-                <div class="appear-app-header">
-                    <div class="appear-app-back" onclick="closeAppearanceApp()">
-                        <svg viewBox="0 0 24 24" width="20" height="20">
-                            <path d="M15 18l-6-6 6-6" />
+    <!-- ====== 外观设置面板 ====== -->
+    <div class="appear-app-overlay" id="appearAppOverlay">
+        <div class="appear-app-panel">
+            <div class="appear-app-header">
+                <div class="appear-app-back" onclick="closeAppearanceApp()">
+                    <svg viewBox="0 0 24 24" width="20" height="20">
+                        <path d="M15 18l-6-6 6-6" />
+                    </svg>
+                </div>
+                <div class="appear-app-title">外观设置</div>
+                <div class="appear-app-save" onclick="saveAppearanceSettings()">
+                    <svg viewBox="0 0 24 24" width="16" height="16">
+                        <polyline points="20 6 9 17 4 12" />
+                    </svg>
+                    <span>保存</span>
+                </div>
+            </div>
+            <div class="appear-app-body">
+                <div class="appear-section">
+                    <div class="appear-section-title">
+                        <svg viewBox="0 0 24 24" width="14" height="14">
+                            <rect x="3" y="3" width="18" height="18" rx="2" />
+                            <circle cx="8.5" cy="8.5" r="1.5" />
+                            <polyline points="21 15 16 10 5 21" />
                         </svg>
+                        主屏幕壁纸
                     </div>
-                    <div class="appear-app-title">外观设置</div>
-                    <div class="appear-app-save" onclick="saveAppearanceSettings()">
-                        <svg viewBox="0 0 24 24" width="16" height="16">
-                            <polyline points="20 6 9 17 4 12" />
+                    <div class="appear-wallpaper-preview">
+                        <img src="" id="appearWpPreviewImg" alt="" style="display:none;">
+                    </div>
+                    <div class="appear-field">
+                        <label>壁纸图片URL（推荐使用URL，无大小限制）</label>
+                        <input type="text" id="appearWpUrl" class="appear-input" placeholder="粘贴图片链接..."
+                            oninput="refreshWallpaperPreview()">
+                    </div>
+                    <div class="appear-wallpaper-btns">
+                        <div class="appear-wp-btn" onclick="triggerAppearWpUpload()">
+                            <svg viewBox="0 0 24 24" width="14" height="14">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                                <polyline points="17 8 12 3 7 8" />
+                                <line x1="12" y1="3" x2="12" y2="15" />
+                            </svg>
+                            上传本地图片
+                        </div>
+                    </div>
+                    <input type="file" id="appearWpFile" class="appear-wp-file" accept="image/*"
+                        onchange="handleAppearWpFile(event)">
+                    <div class="appear-font-hint">本地上传会自动压缩，建议尽量使用图片URL以获得最佳画质</div>
+                </div>
+                <div class="appear-section">
+                    <div class="appear-section-title">
+                        <svg viewBox="0 0 24 24" width="14" height="14">
+                            <rect x="3" y="3" width="18" height="18" rx="2" />
+                            <circle cx="8.5" cy="8.5" r="1.5" />
+                            <polyline points="21 15 16 10 5 21" />
                         </svg>
-                        <span>保存</span>
+                        自定义图标图片
+                    </div>
+                    <div class="appear-font-hint" style="margin-bottom:10px">点击下方图标可单独换成你喜欢的图片，留空恢复默认SVG图标
+                    </div>
+                    <div class="appear-icon-grid" id="appearIconGrid"></div>
+                </div>
+                <div class="appear-section">
+                    <div class="appear-section-title">
+                        <svg viewBox="0 0 24 24" width="14" height="14">
+                            <polyline points="4 7 4 4 20 4 20 7" />
+                            <line x1="9" y1="20" x2="15" y2="20" />
+                            <line x1="12" y1="4" x2="12" y2="20" />
+                        </svg>
+                        全局字体
+                    </div>
+                    <div class="appear-field">
+                        <label>字体URL（.woff2 / .ttf / .otf）</label>
+                        <input type="text" id="appearFontUrl" class="appear-input" placeholder="粘贴字体文件链接...">
+                    </div>
+                    <div class="appear-font-hint">保存后全局生效，留空则使用系统默认字体</div>
+                </div>
+                <div class="appear-section">
+                    <div class="appear-section-title">
+                        <svg viewBox="0 0 24 24" width="14" height="14">
+                            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+                        </svg>
+                        气泡小组件字体颜色
+                    </div>
+                    <div class="appear-color-row">
+                        <div class="appear-color-dot" style="background:rgba(80,60,70,0.9)"
+                            data-color="rgba(80,60,70,0.9)" onclick="pickAppearBubbleColor(this)"></div>
+                        <div class="appear-color-dot" style="background:#ffffff" data-color="#ffffff"
+                            onclick="pickAppearBubbleColor(this)"></div>
+                        <div class="appear-color-dot" style="background:#ffdde7" data-color="#ffdde7"
+                            onclick="pickAppearBubbleColor(this)"></div>
+                        <div class="appear-color-dot" style="background:#ffa4b6" data-color="#ffa4b6"
+                            onclick="pickAppearBubbleColor(this)"></div>
+                        <div class="appear-color-dot" style="background:#a78bfa" data-color="#a78bfa"
+                            onclick="pickAppearBubbleColor(this)"></div>
+                        <div class="appear-color-dot" style="background:#67e8f9" data-color="#67e8f9"
+                            onclick="pickAppearBubbleColor(this)"></div>
+                        <div class="appear-color-dot" style="background:#fcd34d" data-color="#fcd34d"
+                            onclick="pickAppearBubbleColor(this)"></div>
+                        <div class="appear-color-dot" style="background:#86efac" data-color="#86efac"
+                            onclick="pickAppearBubbleColor(this)"></div>
+                    </div>
+                    <div class="appear-color-input-row">
+                        <input type="color" id="appearBubbleColorPicker" class="appear-color-native" value="#503c46"
+                            onchange="setAppearBubbleFromPicker(this.value)">
+                        <input type="text" id="appearBubbleColorHex" class="appear-input appear-input-short"
+                            value="rgba(80,60,70,0.9)" placeholder="#hex或rgba()"
+                            oninput="setAppearBubbleFromHex(this.value)">
                     </div>
                 </div>
-                <div class="appear-app-body">
-                    <div class="appear-section">
-                        <div class="appear-section-title">
+                <!-- ★ 图标文字颜色 ★ -->
+                <div class="appear-section">
+                    <div class="appear-section-title">
+                        <svg viewBox="0 0 24 24" width="16" height="16">
+                            <circle cx="12" cy="12" r="10" />
+                            <line x1="2" y1="12" x2="22" y2="12" />
+                            <path
+                                d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
+                        </svg>
+                        图标文字颜色
+                    </div>
+                    <div class="appear-color-row">
+                        <div class="appear-label-color-dot" style="background:rgba(80,60,70,0.9)"
+                            data-color="rgba(80,60,70,0.9)" onclick="pickLabelColor(this)"></div>
+                        <div class="appear-label-color-dot" style="background:#ffffff" data-color="#ffffff"
+                            onclick="pickLabelColor(this)"></div>
+                        <div class="appear-label-color-dot" style="background:#333333" data-color="#333333"
+                            onclick="pickLabelColor(this)"></div>
+                        <div class="appear-label-color-dot" style="background:#ffdde7" data-color="#ffdde7"
+                            onclick="pickLabelColor(this)"></div>
+                        <div class="appear-label-color-dot" style="background:#ffa4b6" data-color="#ffa4b6"
+                            onclick="pickLabelColor(this)"></div>
+                        <div class="appear-label-color-dot" style="background:#a78bfa" data-color="#a78bfa"
+                            onclick="pickLabelColor(this)"></div>
+                    </div>
+                    <div class="appear-color-custom">
+                        <input type="color" id="appearLabelColorPicker" value="#333333"
+                            oninput="setLabelColorFromPicker(this.value)">
+                        <input type="text" id="appearLabelColorHex" placeholder="#333333 或 rgba(...)"
+                            oninput="setLabelColorFromHex(this.value)">
+                    </div>
+                    <div class="appear-font-hint">设置应用图标下方文字的颜色。留空则使用默认颜色。</div>
+                </div>
+                <div class="appear-section">
+                    <div class="appear-section-title">
+                        <svg viewBox="0 0 24 24" width="14" height="14">
+                            <rect x="2" y="3" width="20" height="4" rx="1" />
+                            <line x1="6" y1="5" x2="6" y2="5.01" />
+                            <line x1="10" y1="5" x2="10" y2="5.01" />
+                        </svg>
+                        顶部状态栏
+                    </div>
+                    <div class="appear-toggle-row">
+                        <div>
+                            <div class="appear-toggle-label">显示状态栏</div>
+                            <div class="appear-toggle-desc">关闭后隐藏时间、电量、网络等信息</div>
+                        </div>
+                        <label class="appear-toggle">
+                            <input type="checkbox" id="appearStatusbarToggle" checked>
+                            <div class="appear-toggle-track"></div>
+                        </label>
+                    </div>
+                </div>
+                <!-- 消息铃声 -->
+                <div class="appear-section">
+                    <div class="appear-section-title">
+                        <svg viewBox="0 0 24 24" width="14" height="14">
+                            <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+                            <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+                        </svg>
+                        消息铃声
+                    </div>
+                    <div class="appear-field">
+                        <label>铃声URL（支持 mp3 / wav / ogg）</label>
+                        <input type="text" class="appear-input" id="appearRingtoneUrl" value=""
+                            placeholder="https://example.com/notify.mp3">
+                    </div>
+                    <div class="appear-ringtone-btns">
+                        <div class="appear-wp-btn" onclick="testRingtone()">
                             <svg viewBox="0 0 24 24" width="14" height="14">
-                                <rect x="3" y="3" width="18" height="18" rx="2" />
-                                <circle cx="8.5" cy="8.5" r="1.5" />
-                                <polyline points="21 15 16 10 5 21" />
+                                <polygon points="5 3 19 12 5 21 5 3" />
                             </svg>
-                            主屏幕壁纸
+                            <span>试听</span>
                         </div>
-                        <div class="appear-wallpaper-preview">
-                            <img src="" id="appearWpPreviewImg" alt="" style="display:none;">
+                        <div class="appear-wp-btn"
+                            onclick="document.getElementById('appearRingtoneUrl').value='';showToast('已清空铃声')">
+                            <svg viewBox="0 0 24 24" width="14" height="14">
+                                <line x1="18" y1="6" x2="6" y2="18" />
+                                <line x1="6" y1="6" x2="18" y2="18" />
+                            </svg>
+                            <span>清空</span>
                         </div>
-                        <div class="appear-field">
-                            <label>壁纸图片URL（推荐使用URL，无大小限制）</label>
-                            <input type="text" id="appearWpUrl" class="appear-input" placeholder="粘贴图片链接..."
-                                oninput="refreshWallpaperPreview()">
+                    </div>
+                    <div class="appear-font-hint">设置后，收到角色消息时会播放此铃声。留空则无提示音。</div>
+                </div>
+                <div class="appear-section appear-section-danger">
+                    <div class="appear-clear-btn" onclick="clearAllAppearSettings()">
+                        <svg viewBox="0 0 24 24" width="16" height="16">
+                            <polyline points="3 6 5 6 21 6" />
+                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                        </svg>
+                        清除所有外观设置
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ====== 世界书 App Overlay ====== -->
+    <div class="wb-app-overlay" id="wbAppOverlay">
+        <div class="wb-app-panel">
+            <div class="wb-app-header">
+                <div class="wb-app-back" onclick="closeWorldBookApp()">
+                    <svg viewBox="0 0 24 24">
+                        <polyline points="15 18 9 12 15 6" />
+                    </svg>
+                </div>
+                <div class="wb-app-title">World Book · 世界书</div>
+                <div class="wb-app-header-add" onclick="openWbEditor()">
+                    <svg viewBox="0 0 24 24">
+                        <line x1="12" y1="5" x2="12" y2="19" />
+                        <line x1="5" y1="12" x2="19" y2="12" />
+                    </svg>
+                </div>
+            </div>
+            <div class="wb-group-bar" id="wbGroupBar"></div>
+            <div class="wb-tab-bar" id="wbTabBar">
+                <div class="wb-tab active" data-tab="global" onclick="switchWbTab('global')">Global · 全局</div>
+                <div class="wb-tab" data-tab="role" onclick="switchWbTab('role')">Character · 角色</div>
+            </div>
+            <div class="wb-app-body" id="wbAppBody"></div>
+        </div><!-- /wb-app-panel -->
+
+        <!-- 世界书编辑器 -->
+        <div class="wb-editor-overlay" id="wbEditorOverlay">
+            <div class="wb-editor-panel">
+                <div class="wb-editor-header">
+                    <div class="wb-app-back" onclick="closeWbEditor()">
+                        <svg viewBox="0 0 24 24">
+                            <polyline points="15 18 9 12 15 6" />
+                        </svg>
+                    </div>
+                    <div class="wb-app-title" id="wbEditorTitle">New Entry · 新建</div>
+                    <div class="wb-editor-save" onclick="saveWbEntry()">Save</div>
+                </div>
+                <div class="wb-editor-body">
+                    <!-- 名称 -->
+                    <div class="wb-editor-field">
+                        <div class="wb-editor-label">NAME · 名称</div>
+                        <input type="text" id="wbEdName" class="wb-editor-input" placeholder="给这条世界书起个名字">
+                    </div>
+                    <!-- 分组 -->
+                    <div class="wb-editor-field">
+                        <div class="wb-editor-label">GROUP · 分组</div>
+                        <select id="wbEdGroup" class="wb-editor-input">
+                            <option value="默认">默认</option>
+                            <option value="角色">角色</option>
+                            <option value="场景">场景</option>
+                            <option value="规则">规则</option>
+                            <option value="剧情">剧情</option>
+                            <option value="其他">其他</option>
+                        </select>
+                    </div>
+                    <!-- 关键词 -->
+                    <div class="wb-editor-field">
+                        <div class="wb-editor-label">KEYWORDS · 关键词（逗号分隔）</div>
+                        <input type="text" id="wbEdKeywords" class="wb-editor-input" placeholder="森林, 魔法, 古堡">
+                    </div>
+                    <!-- 内容 -->
+                    <div class="wb-editor-field">
+                        <div class="wb-editor-label">CONTENT · 内容</div>
+                        <textarea id="wbEdContent" class="wb-editor-textarea" rows="8"
+                            placeholder="在这里编写世界观设定、角色描述、规则等..."></textarea>
+                    </div>
+                    <!-- 注入位置 -->
+                    <div class="wb-editor-field">
+                        <div class="wb-inject-section" id="wbInjectSection">
+                            <div class="wb-inject-trigger" onclick="toggleWbInjectDropdown()">
+                                <div class="wb-inject-trigger-left">
+                                    <span class="wb-inject-trigger-label">INJECT · 注入位置</span>
+                                    <span class="wb-inject-trigger-value" id="wbInjectDisplay">前</span>
+                                </div>
+                                <div class="wb-inject-arrow">
+                                    <svg viewBox="0 0 24 24">
+                                        <polyline points="6 9 12 15 18 9" />
+                                    </svg>
+                                </div>
+                            </div>
+                            <div class="wb-inject-dropdown">
+                                <div class="wb-inject-options">
+                                    <div class="wb-inject-opt active" data-pos="before"
+                                        onclick="selectWbInject('before')">
+                                        <div class="wb-io-dot"></div>
+                                        <span class="wb-io-text">前 · 系统提示之后</span>
+                                    </div>
+                                    <div class="wb-inject-opt" data-pos="middle" onclick="selectWbInject('middle')">
+                                        <div class="wb-io-dot"></div>
+                                        <span class="wb-io-text">中 · 对话中间插入</span>
+                                    </div>
+                                    <div class="wb-inject-opt" data-pos="after" onclick="selectWbInject('after')">
+                                        <div class="wb-io-dot"></div>
+                                        <span class="wb-io-text">后 · 最新消息之后</span>
+                                    </div>
+                                </div><!-- /wb-inject-options -->
+                            </div><!-- /wb-inject-dropdown -->
+                        </div><!-- /wb-inject-section -->
+                    </div><!-- /wb-editor-field (注入位置) -->
+                </div><!-- /wb-editor-body -->
+            </div><!-- /wb-editor-panel -->
+        </div><!-- /wb-editor-overlay -->
+    </div><!-- ★★★ /wb-app-overlay ★★★ -->
+
+    <!-- ====== 聊一聊 App Overlay ====== -->
+    <div class="chat-app-overlay" id="chatAppOverlay">
+        <div class="chat-header">
+            <div class="chat-close-btn" onclick="closeChatApp()">
+                <svg viewBox="0 0 24 24">
+                    <polyline points="15 18 9 12 15 6" />
+                </svg>
+            </div>
+            <div class="chat-header-title" id="chatHeaderTitle">消息</div>
+            <div class="chat-header-actions">
+                <div class="chat-header-btn" onclick="toggleChatMenu()">
+                    <svg viewBox="0 0 24 24">
+                        <line x1="12" y1="5" x2="12" y2="19" />
+                        <line x1="5" y1="12" x2="19" y2="12" />
+                    </svg>
+                </div>
+            </div>
+            <div class="chat-plus-menu" id="chatPlusMenu">
+                <div class="chat-plus-menu-item" onclick="openCreateRole(); toggleChatMenu();">
+                    <svg viewBox="0 0 24 24">
+                        <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                        <circle cx="8.5" cy="7" r="4" />
+                        <line x1="20" y1="8" x2="20" y2="14" />
+                        <line x1="23" y1="11" x2="17" y2="11" />
+                    </svg>
+                    <span>创建角色</span>
+                </div>
+
+            </div>
+        </div>
+        <div class="chat-body" id="chatBody"></div>
+        <div class="chat-conversation" id="chatConversation"></div>
+
+        <!-- ★ 定位面板 ★ -->
+        <div class="loc-overlay" id="locationOverlay"></div>
+
+
+        <!-- 个人主页 -->
+        <div class="chat-profile-page" id="chatProfilePage">
+            <div class="chat-profile-header">
+                <div class="chat-profile-back" onclick="closeProfilePage()">
+                    <svg viewBox="0 0 24 24">
+                        <polyline points="15 18 9 12 15 6" />
+                    </svg>
+                </div>
+                <div class="chat-profile-title">个人主页</div>
+            </div>
+            <div class="chat-profile-body" id="chatProfileBody"></div>
+        </div>
+
+        <!-- ====== 聊天美化面板 ====== -->
+        <div class="beautify-page" id="beautifyPage">
+            <div class="beautify-header">
+                <div class="beautify-back" onclick="closeBeautifyPage()">
+                    <svg viewBox="0 0 24 24">
+                        <polyline points="15 18 9 12 15 6" />
+                    </svg>
+                </div>
+                <div class="beautify-title">聊天美化</div>
+                <div class="beautify-header-spacer"></div>
+            </div>
+            <div class="beautify-body">
+
+                <!-- ===== CSS气泡主题 ===== -->
+                <div class="beautify-section">
+                    <div class="beautify-section-title">
+                        <svg viewBox="0 0 24 24" width="14" height="14">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                            <polyline points="14 2 14 8 20 8" />
+                            <line x1="16" y1="13" x2="8" y2="13" />
+                            <line x1="16" y1="17" x2="8" y2="17" />
+                        </svg>
+                        CSS 气泡主题
+                    </div>
+
+                    <!-- ★ 气泡实时预览 -->
+                    <div class="beautify-bubble-preview-wrap" id="bfBubblePreviewWrap">
+                        <div class="beautify-bubble-preview-label">气泡预览</div>
+                        <div class="beautify-bubble-preview-box" id="bfBubblePreviewBox">
+                            <!-- 角色气泡（左） -->
+                            <div class="beautify-bp-row beautify-bp-left">
+                                <div class="beautify-bp-name-left">角色</div>
+                                <div class="chat-bubble beautify-bp-bubble" id="bfBpCharBubble">
+                                    <span>今天天气真好呀～要不要一起出去走走？</span>
+                                </div>
+                            </div>
+                            <!-- 用户气泡（右） -->
+                            <div class="beautify-bp-row beautify-bp-right">
+                                <div class="chat-bubble chat-bubble-self beautify-bp-bubble" id="bfBpUserBubble">
+                                    <span>好呀！我马上准备 ♡</span>
+                                </div>
+                                <div class="beautify-bp-name-right">我</div>
+                            </div>
+                            <!-- 角色气泡2（左） -->
+                            <div class="beautify-bp-row beautify-bp-left">
+                                <div class="beautify-bp-name-left">角色</div>
+                                <div class="chat-bubble beautify-bp-bubble" id="bfBpCharBubble2">
+                                    <span>那我在老地方等你～ 🌸</span>
+                                </div>
+                            </div>
                         </div>
-                        <div class="appear-wallpaper-btns">
-                            <div class="appear-wp-btn" onclick="triggerAppearWpUpload()">
+                        <!-- 预览区专属style，实时注入 -->
+                        <style id="bfBubblePreviewStyle"></style>
+                    </div>
+
+                    <div class="beautify-field">
+                        <label>自定义CSS代码（可修改气泡、工具栏图标、返回键等）</label>
+                        <textarea id="bfCssCode" class="beautify-textarea" rows="8" oninput="liveUpdateBubblePreview()"
+                            placeholder="/* 可用选择器: */&#10;.chat-bubble&#10;.chat-bubble::before&#10;.chat-bubble::after&#10;.chat-bubble-row.self .chat-bubble&#10;.chat-bubble-row.self .chat-bubble::before&#10;.chat-bubble-row.self .chat-bubble::after&#10;&#10;/* 示例: */&#10;.chat-bubble {&#10;    background: rgba(255,192,203,0.3) !important;&#10;}&#10;.chat-bubble-row.self .chat-bubble {&#10;    background: rgba(173,216,230,0.3) !important;&#10;}"></textarea>
+                    </div>
+
+                    <div class="beautify-btn-row">
+                        <div class="beautify-btn" onclick="previewCssTheme()">
+                            <svg viewBox="0 0 24 24" width="14" height="14">
+                                <polyline points="20 6 9 17 4 12" />
+                            </svg>
+                            应用到聊天
+                        </div>
+                        <div class="beautify-btn beautify-btn-primary" onclick="saveCssPreset()">
+                            <svg viewBox="0 0 24 24" width="14" height="14">
+                                <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" />
+                                <polyline points="17 21 17 13 7 13 7 21" />
+                                <polyline points="7 3 7 8 15 8" />
+                            </svg>
+                            保存主题
+                        </div>
+                    </div>
+
+                    <!-- CSS主题预设列表 -->
+                    <div class="beautify-sub-title">主题预设</div>
+                    <div class="beautify-preset-list" id="bfCssPresetList">
+                        <div class="beautify-preset-empty">暂无主题预设</div>
+                    </div>
+                </div>
+
+                <!-- ===== 全局背景 ===== -->
+                <div class="beautify-section">
+                    <div class="beautify-section-title">
+                        <svg viewBox="0 0 24 24" width="14" height="14">
+                            <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+                            <circle cx="8.5" cy="8.5" r="1.5" />
+                            <polyline points="21 15 16 10 5 21" />
+                        </svg>
+                        全局背景
+                    </div>
+                    <div class="beautify-field">
+                        <label>聊天背景（图片URL/文件上传）</label>
+                        <div class="beautify-wallpaper-preview" id="bfWallpaperPreview">
+                            <img id="bfWallpaperImg" src="" alt="" style="display:none">
+                            <div class="beautify-wallpaper-placeholder" id="bfWallpaperPlaceholder">
+                                <svg viewBox="0 0 24 24" width="24" height="24">
+                                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+                                    <circle cx="8.5" cy="8.5" r="1.5" />
+                                    <polyline points="21 15 16 10 5 21" />
+                                </svg>
+                                <span>暂无背景</span>
+                            </div>
+                        </div>
+                        <div class="beautify-input-row" style="margin-bottom:8px">
+                            <input type="text" id="bfWallpaperUrl" class="beautify-input beautify-input-flex"
+                                placeholder="粘贴图片URL">
+                        </div>
+                        <div class="beautify-btn-row">
+                            <div class="beautify-btn" onclick="triggerWallpaperUpload()">
                                 <svg viewBox="0 0 24 24" width="14" height="14">
                                     <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
                                     <polyline points="17 8 12 3 7 8" />
                                     <line x1="12" y1="3" x2="12" y2="15" />
                                 </svg>
-                                上传本地图片
+                                上传图片
                             </div>
-                        </div>
-                        <input type="file" id="appearWpFile" class="appear-wp-file" accept="image/*"
-                            onchange="handleAppearWpFile(event)">
-                        <div class="appear-font-hint">本地上传会自动压缩，建议尽量使用图片URL以获得最佳画质</div>
-                    </div>
-                    <div class="appear-section">
-                        <div class="appear-section-title">
-                            <svg viewBox="0 0 24 24" width="14" height="14">
-                                <rect x="3" y="3" width="18" height="18" rx="2" />
-                                <circle cx="8.5" cy="8.5" r="1.5" />
-                                <polyline points="21 15 16 10 5 21" />
-                            </svg>
-                            自定义图标图片
-                        </div>
-                        <div class="appear-font-hint" style="margin-bottom:10px">点击下方图标可单独换成你喜欢的图片，留空恢复默认SVG图标
-                        </div>
-                        <div class="appear-icon-grid" id="appearIconGrid"></div>
-                    </div>
-                    <div class="appear-section">
-                        <div class="appear-section-title">
-                            <svg viewBox="0 0 24 24" width="14" height="14">
-                                <polyline points="4 7 4 4 20 4 20 7" />
-                                <line x1="9" y1="20" x2="15" y2="20" />
-                                <line x1="12" y1="4" x2="12" y2="20" />
-                            </svg>
-                            全局字体
-                        </div>
-                        <div class="appear-field">
-                            <label>字体URL（.woff2 / .ttf / .otf）</label>
-                            <input type="text" id="appearFontUrl" class="appear-input" placeholder="粘贴字体文件链接...">
-                        </div>
-                        <div class="appear-font-hint">保存后全局生效，留空则使用系统默认字体</div>
-                    </div>
-                    <div class="appear-section">
-                        <div class="appear-section-title">
-                            <svg viewBox="0 0 24 24" width="14" height="14">
-                                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
-                            </svg>
-                            气泡小组件字体颜色
-                        </div>
-                        <div class="appear-color-row">
-                            <div class="appear-color-dot" style="background:rgba(80,60,70,0.9)"
-                                data-color="rgba(80,60,70,0.9)" onclick="pickAppearBubbleColor(this)"></div>
-                            <div class="appear-color-dot" style="background:#ffffff" data-color="#ffffff"
-                                onclick="pickAppearBubbleColor(this)"></div>
-                            <div class="appear-color-dot" style="background:#ffdde7" data-color="#ffdde7"
-                                onclick="pickAppearBubbleColor(this)"></div>
-                            <div class="appear-color-dot" style="background:#ffa4b6" data-color="#ffa4b6"
-                                onclick="pickAppearBubbleColor(this)"></div>
-                            <div class="appear-color-dot" style="background:#a78bfa" data-color="#a78bfa"
-                                onclick="pickAppearBubbleColor(this)"></div>
-                            <div class="appear-color-dot" style="background:#67e8f9" data-color="#67e8f9"
-                                onclick="pickAppearBubbleColor(this)"></div>
-                            <div class="appear-color-dot" style="background:#fcd34d" data-color="#fcd34d"
-                                onclick="pickAppearBubbleColor(this)"></div>
-                            <div class="appear-color-dot" style="background:#86efac" data-color="#86efac"
-                                onclick="pickAppearBubbleColor(this)"></div>
-                        </div>
-                        <div class="appear-color-input-row">
-                            <input type="color" id="appearBubbleColorPicker" class="appear-color-native" value="#503c46"
-                                onchange="setAppearBubbleFromPicker(this.value)">
-                            <input type="text" id="appearBubbleColorHex" class="appear-input appear-input-short"
-                                value="rgba(80,60,70,0.9)" placeholder="#hex或rgba()"
-                                oninput="setAppearBubbleFromHex(this.value)">
-                        </div>
-                    </div>
-                    <!-- ★ 图标文字颜色 ★ -->
-                    <div class="appear-section">
-                        <div class="appear-section-title">
-                            <svg viewBox="0 0 24 24" width="16" height="16">
-                                <circle cx="12" cy="12" r="10" />
-                                <line x1="2" y1="12" x2="22" y2="12" />
-                                <path
-                                    d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
-                            </svg>
-                            图标文字颜色
-                        </div>
-                        <div class="appear-color-row">
-                            <div class="appear-label-color-dot" style="background:rgba(80,60,70,0.9)"
-                                data-color="rgba(80,60,70,0.9)" onclick="pickLabelColor(this)"></div>
-                            <div class="appear-label-color-dot" style="background:#ffffff" data-color="#ffffff"
-                                onclick="pickLabelColor(this)"></div>
-                            <div class="appear-label-color-dot" style="background:#333333" data-color="#333333"
-                                onclick="pickLabelColor(this)"></div>
-                            <div class="appear-label-color-dot" style="background:#ffdde7" data-color="#ffdde7"
-                                onclick="pickLabelColor(this)"></div>
-                            <div class="appear-label-color-dot" style="background:#ffa4b6" data-color="#ffa4b6"
-                                onclick="pickLabelColor(this)"></div>
-                            <div class="appear-label-color-dot" style="background:#a78bfa" data-color="#a78bfa"
-                                onclick="pickLabelColor(this)"></div>
-                        </div>
-                        <div class="appear-color-custom">
-                            <input type="color" id="appearLabelColorPicker" value="#333333"
-                                oninput="setLabelColorFromPicker(this.value)">
-                            <input type="text" id="appearLabelColorHex" placeholder="#333333 或 rgba(...)"
-                                oninput="setLabelColorFromHex(this.value)">
-                        </div>
-                        <div class="appear-font-hint">设置应用图标下方文字的颜色。留空则使用默认颜色。</div>
-                    </div>
-                    <div class="appear-section">
-                        <div class="appear-section-title">
-                            <svg viewBox="0 0 24 24" width="14" height="14">
-                                <rect x="2" y="3" width="20" height="4" rx="1" />
-                                <line x1="6" y1="5" x2="6" y2="5.01" />
-                                <line x1="10" y1="5" x2="10" y2="5.01" />
-                            </svg>
-                            顶部状态栏
-                        </div>
-                        <div class="appear-toggle-row">
-                            <div>
-                                <div class="appear-toggle-label">显示状态栏</div>
-                                <div class="appear-toggle-desc">关闭后隐藏时间、电量、网络等信息</div>
-                            </div>
-                            <label class="appear-toggle">
-                                <input type="checkbox" id="appearStatusbarToggle" checked>
-                                <div class="appear-toggle-track"></div>
-                            </label>
-                        </div>
-                    </div>
-                    <!-- 消息铃声 -->
-                    <div class="appear-section">
-                        <div class="appear-section-title">
-                            <svg viewBox="0 0 24 24" width="14" height="14">
-                                <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
-                                <path d="M13.73 21a2 2 0 0 1-3.46 0" />
-                            </svg>
-                            消息铃声
-                        </div>
-                        <div class="appear-field">
-                            <label>铃声URL（支持 mp3 / wav / ogg）</label>
-                            <input type="text" class="appear-input" id="appearRingtoneUrl" value=""
-                                placeholder="https://example.com/notify.mp3">
-                        </div>
-                        <div class="appear-ringtone-btns">
-                            <div class="appear-wp-btn" onclick="testRingtone()">
+                            <div class="beautify-btn beautify-btn-primary" onclick="applyWallpaper()">
                                 <svg viewBox="0 0 24 24" width="14" height="14">
-                                    <polygon points="5 3 19 12 5 21 5 3" />
+                                    <polyline points="20 6 9 17 4 12" />
                                 </svg>
-                                <span>试听</span>
-                            </div>
-                            <div class="appear-wp-btn"
-                                onclick="document.getElementById('appearRingtoneUrl').value='';showToast('已清空铃声')">
-                                <svg viewBox="0 0 24 24" width="14" height="14">
-                                    <line x1="18" y1="6" x2="6" y2="18" />
-                                    <line x1="6" y1="6" x2="18" y2="18" />
-                                </svg>
-                                <span>清空</span>
+                                应用背景
                             </div>
                         </div>
-                        <div class="appear-font-hint">设置后，收到角色消息时会播放此铃声。留空则无提示音。</div>
-                    </div>
-                    <div class="appear-section appear-section-danger">
-                        <div class="appear-clear-btn" onclick="clearAllAppearSettings()">
-                            <svg viewBox="0 0 24 24" width="16" height="16">
-                                <polyline points="3 6 5 6 21 6" />
-                                <path
-                                    d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
-                            </svg>
-                            清除所有外观设置
-                        </div>
+                        <input type="file" id="bfWallpaperFile" accept="image/*" style="display:none"
+                            onchange="handleWallpaperFile(event)">
                     </div>
                 </div>
+
+                <!-- ===== 恢复默认 ===== -->
+                <div class="beautify-section beautify-section-danger">
+                    <div class="beautify-danger-btn" onclick="resetAllBeautify()">
+                        <svg viewBox="0 0 24 24" width="16" height="16">
+                            <polyline points="1 4 1 10 7 10" />
+                            <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10" />
+                        </svg>
+                        恢复默认外观
+                    </div>
+                </div>
+
             </div>
         </div>
 
-        <!-- ====== 世界书 App Overlay ====== -->
-        <div class="wb-app-overlay" id="wbAppOverlay">
-            <div class="wb-app-panel">
-                <div class="wb-app-header">
-                    <div class="wb-app-back" onclick="closeWorldBookApp()">
-                        <svg viewBox="0 0 24 24">
-                            <polyline points="15 18 9 12 15 6" />
-                        </svg>
-                    </div>
-                    <div class="wb-app-title">World Book · 世界书</div>
-                    <div class="wb-app-header-add" onclick="openWbEditor()">
-                        <svg viewBox="0 0 24 24">
-                            <line x1="12" y1="5" x2="12" y2="19" />
-                            <line x1="5" y1="12" x2="19" y2="12" />
-                        </svg>
-                    </div>
+        <!-- ====== 表情包管理页面 ====== -->
+        <div class="sticker-manager-page" id="stickerManagerPage" style="display:none">
+            <div class="stk-header">
+                <div class="stk-header-back" onclick="closeStickerManager()">
+                    <svg viewBox="0 0 24 24" width="18" height="18">
+                        <polyline points="15 18 9 12 15 6" />
+                    </svg>
                 </div>
-                <div class="wb-group-bar" id="wbGroupBar"></div>
-                <div class="wb-tab-bar" id="wbTabBar">
-                    <div class="wb-tab active" data-tab="global" onclick="switchWbTab('global')">Global · 全局</div>
-                    <div class="wb-tab" data-tab="role" onclick="switchWbTab('role')">Character · 角色</div>
-                </div>
-                <div class="wb-app-body" id="wbAppBody"></div>
-            </div><!-- /wb-app-panel -->
+                <div class="stk-header-title">表情包管理</div>
+                <div class="stk-header-spacer"></div>
+            </div>
+            <div class="stk-body" id="stickerManagerBody"></div>
+        </div>
 
-            <!-- 世界书编辑器 -->
-            <div class="wb-editor-overlay" id="wbEditorOverlay">
-                <div class="wb-editor-panel">
-                    <div class="wb-editor-header">
-                        <div class="wb-app-back" onclick="closeWbEditor()">
-                            <svg viewBox="0 0 24 24">
-                                <polyline points="15 18 9 12 15 6" />
-                            </svg>
-                        </div>
-                        <div class="wb-app-title" id="wbEditorTitle">New Entry · 新建</div>
-                        <div class="wb-editor-save" onclick="saveWbEntry()">Save</div>
-                    </div>
-                    <div class="wb-editor-body">
-                        <!-- 名称 -->
-                        <div class="wb-editor-field">
-                            <div class="wb-editor-label">NAME · 名称</div>
-                            <input type="text" id="wbEdName" class="wb-editor-input" placeholder="给这条世界书起个名字">
-                        </div>
-                        <!-- 分组 -->
-                        <div class="wb-editor-field">
-                            <div class="wb-editor-label">GROUP · 分组</div>
-                            <select id="wbEdGroup" class="wb-editor-input">
-                                <option value="默认">默认</option>
-                                <option value="角色">角色</option>
-                                <option value="场景">场景</option>
-                                <option value="规则">规则</option>
-                                <option value="剧情">剧情</option>
-                                <option value="其他">其他</option>
-                            </select>
-                        </div>
-                        <!-- 关键词 -->
-                        <div class="wb-editor-field">
-                            <div class="wb-editor-label">KEYWORDS · 关键词（逗号分隔）</div>
-                            <input type="text" id="wbEdKeywords" class="wb-editor-input" placeholder="森林, 魔法, 古堡">
-                        </div>
-                        <!-- 内容 -->
-                        <div class="wb-editor-field">
-                            <div class="wb-editor-label">CONTENT · 内容</div>
-                            <textarea id="wbEdContent" class="wb-editor-textarea" rows="8"
-                                placeholder="在这里编写世界观设定、角色描述、规则等..."></textarea>
-                        </div>
-                        <!-- 注入位置 -->
-                        <div class="wb-editor-field">
-                            <div class="wb-inject-section" id="wbInjectSection">
-                                <div class="wb-inject-trigger" onclick="toggleWbInjectDropdown()">
-                                    <div class="wb-inject-trigger-left">
-                                        <span class="wb-inject-trigger-label">INJECT · 注入位置</span>
-                                        <span class="wb-inject-trigger-value" id="wbInjectDisplay">前</span>
-                                    </div>
-                                    <div class="wb-inject-arrow">
-                                        <svg viewBox="0 0 24 24">
-                                            <polyline points="6 9 12 15 18 9" />
-                                        </svg>
-                                    </div>
-                                </div>
-                                <div class="wb-inject-dropdown">
-                                    <div class="wb-inject-options">
-                                        <div class="wb-inject-opt active" data-pos="before"
-                                            onclick="selectWbInject('before')">
-                                            <div class="wb-io-dot"></div>
-                                            <span class="wb-io-text">前 · 系统提示之后</span>
-                                        </div>
-                                        <div class="wb-inject-opt" data-pos="middle" onclick="selectWbInject('middle')">
-                                            <div class="wb-io-dot"></div>
-                                            <span class="wb-io-text">中 · 对话中间插入</span>
-                                        </div>
-                                        <div class="wb-inject-opt" data-pos="after" onclick="selectWbInject('after')">
-                                            <div class="wb-io-dot"></div>
-                                            <span class="wb-io-text">后 · 最新消息之后</span>
-                                        </div>
-                                    </div><!-- /wb-inject-options -->
-                                </div><!-- /wb-inject-dropdown -->
-                            </div><!-- /wb-inject-section -->
-                        </div><!-- /wb-editor-field (注入位置) -->
-                    </div><!-- /wb-editor-body -->
-                </div><!-- /wb-editor-panel -->
-            </div><!-- /wb-editor-overlay -->
-        </div><!-- ★★★ /wb-app-overlay ★★★ -->
-
-        <!-- ====== 聊一聊 App Overlay ====== -->
-        <div class="chat-app-overlay" id="chatAppOverlay">
-            <div class="chat-header">
-                <div class="chat-close-btn" onclick="closeChatApp()">
+        <!-- 人设编辑器 -->
+        <div class="chat-persona-editor" id="chatPersonaEditor">
+            <div class="chat-pe-header">
+                <div class="chat-pe-back" onclick="closePersonaEditor()">
                     <svg viewBox="0 0 24 24">
                         <polyline points="15 18 9 12 15 6" />
                     </svg>
                 </div>
-                <div class="chat-header-title" id="chatHeaderTitle">消息</div>
-                <div class="chat-header-actions">
-                    <div class="chat-header-btn" onclick="toggleChatMenu()">
-                        <svg viewBox="0 0 24 24">
-                            <line x1="12" y1="5" x2="12" y2="19" />
-                            <line x1="5" y1="12" x2="19" y2="12" />
-                        </svg>
-                    </div>
-                </div>
-                <div class="chat-plus-menu" id="chatPlusMenu">
-                    <div class="chat-plus-menu-item" onclick="openCreateRole(); toggleChatMenu();">
-                        <svg viewBox="0 0 24 24">
-                            <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
-                            <circle cx="8.5" cy="7" r="4" />
-                            <line x1="20" y1="8" x2="20" y2="14" />
-                            <line x1="23" y1="11" x2="17" y2="11" />
-                        </svg>
-                        <span>创建角色</span>
-                    </div>
-
+                <div class="chat-pe-title">新建角色</div>
+                <div class="chat-pe-save" onclick="savePersona()">
+                    <svg viewBox="0 0 24 24">
+                        <polyline points="20 6 9 17 4 12" />
+                    </svg>
+                    <span>保存</span>
                 </div>
             </div>
-            <div class="chat-body" id="chatBody"></div>
-            <div class="chat-conversation" id="chatConversation"></div>
-
-            <!-- ★ 定位面板 ★ -->
-            <div class="loc-overlay" id="locationOverlay"></div>
-
-
-            <!-- 个人主页 -->
-            <div class="chat-profile-page" id="chatProfilePage">
-                <div class="chat-profile-header">
-                    <div class="chat-profile-back" onclick="closeProfilePage()">
+            <div class="chat-pe-body">
+                <div class="chat-pe-avatar-wrap" onclick="triggerPeAvatarUpload()">
+                    <div class="chat-pe-avatar" id="peAvatarPreview">
                         <svg viewBox="0 0 24 24">
-                            <polyline points="15 18 9 12 15 6" />
+                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                            <circle cx="12" cy="7" r="4" />
                         </svg>
+                        <div class="chat-pe-avatar-hint">上传头像</div>
                     </div>
-                    <div class="chat-profile-title">个人主页</div>
                 </div>
-                <div class="chat-profile-body" id="chatProfileBody"></div>
-            </div>
-
-            <!-- ====== 聊天美化面板 ====== -->
-            <div class="beautify-page" id="beautifyPage">
-                <div class="beautify-header">
-                    <div class="beautify-back" onclick="closeBeautifyPage()">
-                        <svg viewBox="0 0 24 24">
-                            <polyline points="15 18 9 12 15 6" />
-                        </svg>
-                    </div>
-                    <div class="beautify-title">聊天美化</div>
-                    <div class="beautify-header-spacer"></div>
+                <input type="file" id="peAvatarFile" accept="image/*" style="display:none"
+                    onchange="handlePeAvatarFile(event)">
+                <div class="chat-pe-section">
+                    <div class="chat-pe-section-title">基本信息</div>
+                    <div class="chat-pe-field"><label>名字</label><input type="text" id="peName" class="chat-pe-input"
+                            placeholder="角色的名字"></div>
+                    <div class="chat-pe-field"><label>昵称</label><input type="text" id="peNickname" class="chat-pe-input"
+                            placeholder="显示的昵称（选填）"></div>
+                    <div class="chat-pe-field"><label>签名</label><input type="text" id="peSignature"
+                            class="chat-pe-input" placeholder="一句话签名"></div>
                 </div>
-                <div class="beautify-body">
-
-                    <!-- ===== CSS气泡主题 ===== -->
-                    <div class="beautify-section">
-                        <div class="beautify-section-title">
-                            <svg viewBox="0 0 24 24" width="14" height="14">
-                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-                                <polyline points="14 2 14 8 20 8" />
-                                <line x1="16" y1="13" x2="8" y2="13" />
-                                <line x1="16" y1="17" x2="8" y2="17" />
-                            </svg>
-                            CSS 气泡主题
-                        </div>
-
-                        <!-- ★ 气泡实时预览 -->
-                        <div class="beautify-bubble-preview-wrap" id="bfBubblePreviewWrap">
-                            <div class="beautify-bubble-preview-label">气泡预览</div>
-                            <div class="beautify-bubble-preview-box" id="bfBubblePreviewBox">
-                                <!-- 角色气泡（左） -->
-                                <div class="beautify-bp-row beautify-bp-left">
-                                    <div class="beautify-bp-name-left">角色</div>
-                                    <div class="chat-bubble beautify-bp-bubble" id="bfBpCharBubble">
-                                        <span>今天天气真好呀～要不要一起出去走走？</span>
-                                    </div>
-                                </div>
-                                <!-- 用户气泡（右） -->
-                                <div class="beautify-bp-row beautify-bp-right">
-                                    <div class="chat-bubble chat-bubble-self beautify-bp-bubble" id="bfBpUserBubble">
-                                        <span>好呀！我马上准备 ♡</span>
-                                    </div>
-                                    <div class="beautify-bp-name-right">我</div>
-                                </div>
-                                <!-- 角色气泡2（左） -->
-                                <div class="beautify-bp-row beautify-bp-left">
-                                    <div class="beautify-bp-name-left">角色</div>
-                                    <div class="chat-bubble beautify-bp-bubble" id="bfBpCharBubble2">
-                                        <span>那我在老地方等你～ 🌸</span>
-                                    </div>
-                                </div>
-                            </div>
-                            <!-- 预览区专属style，实时注入 -->
-                            <style id="bfBubblePreviewStyle"></style>
-                        </div>
-
-                        <div class="beautify-field">
-                            <label>自定义CSS代码（可修改气泡、工具栏图标、返回键等）</label>
-                            <textarea id="bfCssCode" class="beautify-textarea" rows="8"
-                                oninput="liveUpdateBubblePreview()"
-                                placeholder="/* 可用选择器: */&#10;.chat-bubble&#10;.chat-bubble::before&#10;.chat-bubble::after&#10;.chat-bubble-row.self .chat-bubble&#10;.chat-bubble-row.self .chat-bubble::before&#10;.chat-bubble-row.self .chat-bubble::after&#10;&#10;/* 示例: */&#10;.chat-bubble {&#10;    background: rgba(255,192,203,0.3) !important;&#10;}&#10;.chat-bubble-row.self .chat-bubble {&#10;    background: rgba(173,216,230,0.3) !important;&#10;}"></textarea>
-                        </div>
-
-                        <div class="beautify-btn-row">
-                            <div class="beautify-btn" onclick="previewCssTheme()">
-                                <svg viewBox="0 0 24 24" width="14" height="14">
-                                    <polyline points="20 6 9 17 4 12" />
-                                </svg>
-                                应用到聊天
-                            </div>
-                            <div class="beautify-btn beautify-btn-primary" onclick="saveCssPreset()">
-                                <svg viewBox="0 0 24 24" width="14" height="14">
-                                    <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" />
-                                    <polyline points="17 21 17 13 7 13 7 21" />
-                                    <polyline points="7 3 7 8 15 8" />
-                                </svg>
-                                保存主题
-                            </div>
-                        </div>
-
-                        <!-- CSS主题预设列表 -->
-                        <div class="beautify-sub-title">主题预设</div>
-                        <div class="beautify-preset-list" id="bfCssPresetList">
-                            <div class="beautify-preset-empty">暂无主题预设</div>
-                        </div>
-                    </div>
-
-                    <!-- ===== 全局背景 ===== -->
-                    <div class="beautify-section">
-                        <div class="beautify-section-title">
-                            <svg viewBox="0 0 24 24" width="14" height="14">
-                                <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
-                                <circle cx="8.5" cy="8.5" r="1.5" />
-                                <polyline points="21 15 16 10 5 21" />
-                            </svg>
-                            全局背景
-                        </div>
-                        <div class="beautify-field">
-                            <label>聊天背景（图片URL/文件上传）</label>
-                            <div class="beautify-wallpaper-preview" id="bfWallpaperPreview">
-                                <img id="bfWallpaperImg" src="" alt="" style="display:none">
-                                <div class="beautify-wallpaper-placeholder" id="bfWallpaperPlaceholder">
-                                    <svg viewBox="0 0 24 24" width="24" height="24">
-                                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
-                                        <circle cx="8.5" cy="8.5" r="1.5" />
-                                        <polyline points="21 15 16 10 5 21" />
-                                    </svg>
-                                    <span>暂无背景</span>
-                                </div>
-                            </div>
-                            <div class="beautify-input-row" style="margin-bottom:8px">
-                                <input type="text" id="bfWallpaperUrl" class="beautify-input beautify-input-flex"
-                                    placeholder="粘贴图片URL">
-                            </div>
-                            <div class="beautify-btn-row">
-                                <div class="beautify-btn" onclick="triggerWallpaperUpload()">
-                                    <svg viewBox="0 0 24 24" width="14" height="14">
-                                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                                        <polyline points="17 8 12 3 7 8" />
-                                        <line x1="12" y1="3" x2="12" y2="15" />
-                                    </svg>
-                                    上传图片
-                                </div>
-                                <div class="beautify-btn beautify-btn-primary" onclick="applyWallpaper()">
-                                    <svg viewBox="0 0 24 24" width="14" height="14">
-                                        <polyline points="20 6 9 17 4 12" />
-                                    </svg>
-                                    应用背景
-                                </div>
-                            </div>
-                            <input type="file" id="bfWallpaperFile" accept="image/*" style="display:none"
-                                onchange="handleWallpaperFile(event)">
-                        </div>
-                    </div>
-
-                    <!-- ===== 恢复默认 ===== -->
-                    <div class="beautify-section beautify-section-danger">
-                        <div class="beautify-danger-btn" onclick="resetAllBeautify()">
+                <div class="chat-pe-section">
+                    <div class="chat-pe-section-title">性别</div>
+                    <div class="chat-pe-gender-row">
+                        <div class="chat-pe-gender-btn active" data-gender="male" onclick="selectPeGender('male')">
                             <svg viewBox="0 0 24 24" width="16" height="16">
-                                <polyline points="1 4 1 10 7 10" />
-                                <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10" />
+                                <circle cx="10" cy="14" r="5" />
+                                <line x1="19" y1="5" x2="13.6" y2="10.4" />
+                                <line x1="19" y1="5" x2="15" y2="5" />
+                                <line x1="19" y1="5" x2="19" y2="9" />
                             </svg>
-                            恢复默认外观
+                            <span>男</span>
+                        </div>
+                        <div class="chat-pe-gender-btn" data-gender="female" onclick="selectPeGender('female')">
+                            <svg viewBox="0 0 24 24" width="16" height="16">
+                                <circle cx="12" cy="10" r="5" />
+                                <line x1="12" y1="15" x2="12" y2="22" />
+                                <line x1="9" y1="19" x2="15" y2="19" />
+                            </svg>
+                            <span>女</span>
                         </div>
                     </div>
-
+                </div>
+                <div class="chat-pe-section">
+                    <div class="chat-pe-section-title">详细信息</div>
+                    <div class="chat-pe-field"><textarea id="peDetail" class="chat-pe-textarea" rows="4"
+                            placeholder="年龄、身份、性格、外貌等详细描述..."></textarea>
+                    </div>
                 </div>
             </div>
+        </div>
 
-            <!-- ====== 表情包管理页面 ====== -->
-            <div class="sticker-manager-page" id="stickerManagerPage" style="display:none">
-                <div class="stk-header">
-                    <div class="stk-header-back" onclick="closeStickerManager()">
-                        <svg viewBox="0 0 24 24" width="18" height="18">
-                            <polyline points="15 18 9 12 15 6" />
-                        </svg>
-                    </div>
-                    <div class="stk-header-title">表情包管理</div>
-                    <div class="stk-header-spacer"></div>
+        <!-- 创建AI角色面板 -->
+        <div class="chat-create-role" id="chatCreateRole">
+            <div class="chat-create-header">
+                <div class="chat-create-back" onclick="closeCreateRole()">
+                    <svg viewBox="0 0 24 24">
+                        <polyline points="15 18 9 12 15 6" />
+                    </svg>
                 </div>
-                <div class="stk-body" id="stickerManagerBody"></div>
+                <div class="chat-create-title">创建角色</div>
+                <div class="chat-create-save" onclick="saveRole()">
+                    <svg viewBox="0 0 24 24" width="16" height="16">
+                        <polyline points="20 6 9 17 4 12" />
+                    </svg>
+                    <span>保存</span>
+                </div>
             </div>
-
-            <!-- 人设编辑器 -->
-            <div class="chat-persona-editor" id="chatPersonaEditor">
-                <div class="chat-pe-header">
-                    <div class="chat-pe-back" onclick="closePersonaEditor()">
-                        <svg viewBox="0 0 24 24">
-                            <polyline points="15 18 9 12 15 6" />
-                        </svg>
-                    </div>
-                    <div class="chat-pe-title">新建角色</div>
-                    <div class="chat-pe-save" onclick="savePersona()">
-                        <svg viewBox="0 0 24 24">
-                            <polyline points="20 6 9 17 4 12" />
-                        </svg>
-                        <span>保存</span>
-                    </div>
-                </div>
-                <div class="chat-pe-body">
-                    <div class="chat-pe-avatar-wrap" onclick="triggerPeAvatarUpload()">
-                        <div class="chat-pe-avatar" id="peAvatarPreview">
+            <div class="chat-create-body">
+                <div class="chat-cr-section"
+                    style="background:transparent;border:none;backdrop-filter:none;box-shadow:none;padding:0;">
+                    <div class="chat-cr-avatar-wrap" onclick="triggerRoleAvatarUpload()">
+                        <div class="chat-cr-avatar" id="crAvatarPreview">
                             <svg viewBox="0 0 24 24">
                                 <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
                                 <circle cx="12" cy="7" r="4" />
                             </svg>
-                            <div class="chat-pe-avatar-hint">上传头像</div>
+                            <div class="chat-cr-avatar-hint">上传头像</div>
                         </div>
                     </div>
-                    <input type="file" id="peAvatarFile" accept="image/*" style="display:none"
-                        onchange="handlePeAvatarFile(event)">
-                    <div class="chat-pe-section">
-                        <div class="chat-pe-section-title">基本信息</div>
-                        <div class="chat-pe-field"><label>名字</label><input type="text" id="peName" class="chat-pe-input"
-                                placeholder="角色的名字"></div>
-                        <div class="chat-pe-field"><label>昵称</label><input type="text" id="peNickname"
-                                class="chat-pe-input" placeholder="显示的昵称（选填）"></div>
-                        <div class="chat-pe-field"><label>签名</label><input type="text" id="peSignature"
-                                class="chat-pe-input" placeholder="一句话签名"></div>
-                    </div>
-                    <div class="chat-pe-section">
-                        <div class="chat-pe-section-title">性别</div>
-                        <div class="chat-pe-gender-row">
-                            <div class="chat-pe-gender-btn active" data-gender="male" onclick="selectPeGender('male')">
-                                <svg viewBox="0 0 24 24" width="16" height="16">
+                    <input type="file" id="crAvatarFile" accept="image/*" style="display:none"
+                        onchange="handleRoleAvatarFile(event)">
+                </div>
+                <div class="chat-cr-section">
+                    <div class="chat-cr-section-title"><svg viewBox="0 0 24 24" width="14" height="14">
+                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                            <circle cx="12" cy="7" r="4" />
+                        </svg>基本信息</div>
+                    <div class="chat-cr-field"><label>角色名字</label><input type="text" id="crName" class="chat-cr-input"
+                            placeholder="角色的正式名字"></div>
+                    <div class="chat-cr-field"><label>小名 / 外号</label><input type="text" id="crNickname"
+                            class="chat-cr-input" placeholder="小名或外号（选填，不会替代名字）"></div>
+                    <div class="chat-cr-field"><label>性别</label>
+                        <div class="chat-cr-gender-row">
+                            <div class="chat-cr-gender-btn active" data-gender="male"
+                                onclick="selectRoleGender('male')"><svg viewBox="0 0 24 24" width="16" height="16">
                                     <circle cx="10" cy="14" r="5" />
                                     <line x1="19" y1="5" x2="13.6" y2="10.4" />
                                     <line x1="19" y1="5" x2="15" y2="5" />
                                     <line x1="19" y1="5" x2="19" y2="9" />
-                                </svg>
-                                <span>男</span>
-                            </div>
-                            <div class="chat-pe-gender-btn" data-gender="female" onclick="selectPeGender('female')">
+                                </svg><span>男</span></div>
+                            <div class="chat-cr-gender-btn" data-gender="female" onclick="selectRoleGender('female')">
                                 <svg viewBox="0 0 24 24" width="16" height="16">
                                     <circle cx="12" cy="10" r="5" />
                                     <line x1="12" y1="15" x2="12" y2="22" />
                                     <line x1="9" y1="19" x2="15" y2="19" />
-                                </svg>
-                                <span>女</span>
+                                </svg><span>女</span>
                             </div>
                         </div>
                     </div>
-                    <div class="chat-pe-section">
-                        <div class="chat-pe-section-title">详细信息</div>
-                        <div class="chat-pe-field"><textarea id="peDetail" class="chat-pe-textarea" rows="4"
-                                placeholder="年龄、身份、性格、外貌等详细描述..."></textarea>
+                    <div class="chat-cr-field"><label>详细信息</label><textarea id="crDetail" class="chat-cr-textarea"
+                            rows="3" placeholder="年龄、身份、性格、外貌等详细描述..."></textarea>
+                    </div>
+                </div>
+                <div class="chat-cr-section">
+                    <div class="chat-cr-section-title"><svg viewBox="0 0 24 24" width="14" height="14">
+                            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                            <circle cx="9" cy="7" r="4" />
+                            <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+                            <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+                        </svg>选择分组</div>
+                    <div class="chat-cr-field">
+                        <select id="crGroup" class="chat-cr-select">
+                            <option value="默认">默认</option>
+                        </select>
+                        <div class="chat-cr-custom-group"><input type="text" id="crCustomGroup" class="chat-cr-input"
+                                placeholder="或输入自定义分组名">
+                            <div class="chat-cr-small-btn" onclick="addCustomGroup()">添加</div>
                         </div>
                     </div>
                 </div>
-            </div>
-
-            <!-- 创建AI角色面板 -->
-            <div class="chat-create-role" id="chatCreateRole">
-                <div class="chat-create-header">
-                    <div class="chat-create-back" onclick="closeCreateRole()">
-                        <svg viewBox="0 0 24 24">
-                            <polyline points="15 18 9 12 15 6" />
+                <div class="chat-cr-section">
+                    <div class="chat-cr-section-title"><svg viewBox="0 0 24 24" width="14" height="14">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                            <polyline points="14 2 14 8 20 8" />
+                            <line x1="16" y1="13" x2="8" y2="13" />
+                            <line x1="16" y1="17" x2="8" y2="17" />
+                        </svg>挂载设定</div>
+                    <div class="chat-cr-mount-btn" onclick="openMountSelector('persona')"><svg viewBox="0 0 24 24">
+                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                            <circle cx="12" cy="7" r="4" />
+                        </svg>
+                        <div class="chat-cr-mount-text">挂载人设</div>
+                        <div class="chat-cr-mount-value" id="crMount_persona_val">未选择</div><svg
+                            class="chat-cr-mount-arrow" viewBox="0 0 24 24">
+                            <polyline points="9 18 15 12 9 6" />
                         </svg>
                     </div>
-                    <div class="chat-create-title">创建角色</div>
-                    <div class="chat-create-save" onclick="saveRole()">
-                        <svg viewBox="0 0 24 24" width="16" height="16">
-                            <polyline points="20 6 9 17 4 12" />
+                    <div class="chat-cr-mount-btn" onclick="openMountSelector('worldbook')"><svg viewBox="0 0 24 24">
+                            <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
+                            <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
                         </svg>
-                        <span>保存</span>
+                        <div class="chat-cr-mount-text">挂载世界书</div>
+                        <div class="chat-cr-mount-value" id="crMount_worldbook_val">未选择</div><svg
+                            class="chat-cr-mount-arrow" viewBox="0 0 24 24">
+                            <polyline points="9 18 15 12 9 6" />
+                        </svg>
+                    </div>
+                    <div class="chat-cr-mount-btn" onclick="openMountSelector('sticker')"><svg viewBox="0 0 24 24">
+                            <circle cx="12" cy="12" r="10" />
+                            <path d="M8 14s1.5 2 4 2 4-2 4-2" />
+                            <line x1="9" y1="9" x2="9.01" y2="9" />
+                            <line x1="15" y1="9" x2="15.01" y2="9" />
+                        </svg>
+                        <div class="chat-cr-mount-text">挂载表情包</div>
+                        <div class="chat-cr-mount-value" id="crMount_sticker_val">未选择</div><svg
+                            class="chat-cr-mount-arrow" viewBox="0 0 24 24">
+                            <polyline points="9 18 15 12 9 6" />
+                        </svg>
                     </div>
                 </div>
-                <div class="chat-create-body">
-                    <div class="chat-cr-section"
-                        style="background:transparent;border:none;backdrop-filter:none;box-shadow:none;padding:0;">
-                        <div class="chat-cr-avatar-wrap" onclick="triggerRoleAvatarUpload()">
-                            <div class="chat-cr-avatar" id="crAvatarPreview">
-                                <svg viewBox="0 0 24 24">
-                                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-                                    <circle cx="12" cy="7" r="4" />
-                                </svg>
-                                <div class="chat-cr-avatar-hint">上传头像</div>
-                            </div>
-                        </div>
-                        <input type="file" id="crAvatarFile" accept="image/*" style="display:none"
-                            onchange="handleRoleAvatarFile(event)">
+                <div class="chat-cr-section">
+                    <div class="chat-cr-section-title"><svg viewBox="0 0 24 24" width="14" height="14">
+                            <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+                            <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+                        </svg>消息行为</div>
+                    <div class="chat-cr-toggle-row">
+                        <div>
+                            <div class="chat-cr-toggle-label">消息弹窗通知</div>
+                            <div class="chat-cr-toggle-desc">收到消息时弹出提示</div>
+                        </div><label class="chat-cr-toggle"><input type="checkbox" id="crNotify" checked>
+                            <div class="chat-cr-toggle-track"></div>
+                        </label>
                     </div>
-                    <div class="chat-cr-section">
-                        <div class="chat-cr-section-title"><svg viewBox="0 0 24 24" width="14" height="14">
-                                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-                                <circle cx="12" cy="7" r="4" />
-                            </svg>基本信息</div>
-                        <div class="chat-cr-field"><label>角色名字</label><input type="text" id="crName"
-                                class="chat-cr-input" placeholder="角色的正式名字"></div>
-                        <div class="chat-cr-field"><label>小名 / 外号</label><input type="text" id="crNickname"
-                                class="chat-cr-input" placeholder="小名或外号（选填，不会替代名字）"></div>
-                        <div class="chat-cr-field"><label>性别</label>
-                            <div class="chat-cr-gender-row">
-                                <div class="chat-cr-gender-btn active" data-gender="male"
-                                    onclick="selectRoleGender('male')"><svg viewBox="0 0 24 24" width="16" height="16">
-                                        <circle cx="10" cy="14" r="5" />
-                                        <line x1="19" y1="5" x2="13.6" y2="10.4" />
-                                        <line x1="19" y1="5" x2="15" y2="5" />
-                                        <line x1="19" y1="5" x2="19" y2="9" />
-                                    </svg><span>男</span></div>
-                                <div class="chat-cr-gender-btn" data-gender="female"
-                                    onclick="selectRoleGender('female')">
-                                    <svg viewBox="0 0 24 24" width="16" height="16">
-                                        <circle cx="12" cy="10" r="5" />
-                                        <line x1="12" y1="15" x2="12" y2="22" />
-                                        <line x1="9" y1="19" x2="15" y2="19" />
-                                    </svg><span>女</span>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="chat-cr-field"><label>详细信息</label><textarea id="crDetail" class="chat-cr-textarea"
-                                rows="3" placeholder="年龄、身份、性格、外貌等详细描述..."></textarea>
-                        </div>
+                    <div class="chat-cr-toggle-row">
+                        <div>
+                            <div class="chat-cr-toggle-label">允许后台主动发消息</div>
+                            <div class="chat-cr-toggle-desc">角色可在后台随机发送消息</div>
+                        </div><label class="chat-cr-toggle"><input type="checkbox" id="crBgMsg">
+                            <div class="chat-cr-toggle-track"></div>
+                        </label>
                     </div>
-                    <div class="chat-cr-section">
-                        <div class="chat-cr-section-title"><svg viewBox="0 0 24 24" width="14" height="14">
-                                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
-                                <circle cx="9" cy="7" r="4" />
-                                <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
-                                <path d="M16 3.13a4 4 0 0 1 0 7.75" />
-                            </svg>选择分组</div>
-                        <div class="chat-cr-field">
-                            <select id="crGroup" class="chat-cr-select">
-                                <option value="默认">默认</option>
-                            </select>
-                            <div class="chat-cr-custom-group"><input type="text" id="crCustomGroup"
-                                    class="chat-cr-input" placeholder="或输入自定义分组名">
-                                <div class="chat-cr-small-btn" onclick="addCustomGroup()">添加</div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="chat-cr-section">
-                        <div class="chat-cr-section-title"><svg viewBox="0 0 24 24" width="14" height="14">
-                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-                                <polyline points="14 2 14 8 20 8" />
-                                <line x1="16" y1="13" x2="8" y2="13" />
-                                <line x1="16" y1="17" x2="8" y2="17" />
-                            </svg>挂载设定</div>
-                        <div class="chat-cr-mount-btn" onclick="openMountSelector('persona')"><svg viewBox="0 0 24 24">
-                                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-                                <circle cx="12" cy="7" r="4" />
-                            </svg>
-                            <div class="chat-cr-mount-text">挂载人设</div>
-                            <div class="chat-cr-mount-value" id="crMount_persona_val">未选择</div><svg
-                                class="chat-cr-mount-arrow" viewBox="0 0 24 24">
-                                <polyline points="9 18 15 12 9 6" />
-                            </svg>
-                        </div>
-                        <div class="chat-cr-mount-btn" onclick="openMountSelector('worldbook')"><svg
-                                viewBox="0 0 24 24">
-                                <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
-                                <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
-                            </svg>
-                            <div class="chat-cr-mount-text">挂载世界书</div>
-                            <div class="chat-cr-mount-value" id="crMount_worldbook_val">未选择</div><svg
-                                class="chat-cr-mount-arrow" viewBox="0 0 24 24">
-                                <polyline points="9 18 15 12 9 6" />
-                            </svg>
-                        </div>
-                        <div class="chat-cr-mount-btn" onclick="openMountSelector('sticker')"><svg viewBox="0 0 24 24">
-                                <circle cx="12" cy="12" r="10" />
-                                <path d="M8 14s1.5 2 4 2 4-2 4-2" />
-                                <line x1="9" y1="9" x2="9.01" y2="9" />
-                                <line x1="15" y1="9" x2="15.01" y2="9" />
-                            </svg>
-                            <div class="chat-cr-mount-text">挂载表情包</div>
-                            <div class="chat-cr-mount-value" id="crMount_sticker_val">未选择</div><svg
-                                class="chat-cr-mount-arrow" viewBox="0 0 24 24">
-                                <polyline points="9 18 15 12 9 6" />
-                            </svg>
-                        </div>
-                    </div>
-                    <div class="chat-cr-section">
-                        <div class="chat-cr-section-title"><svg viewBox="0 0 24 24" width="14" height="14">
-                                <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
-                                <path d="M13.73 21a2 2 0 0 1-3.46 0" />
-                            </svg>消息行为</div>
-                        <div class="chat-cr-toggle-row">
-                            <div>
-                                <div class="chat-cr-toggle-label">消息弹窗通知</div>
-                                <div class="chat-cr-toggle-desc">收到消息时弹出提示</div>
-                            </div><label class="chat-cr-toggle"><input type="checkbox" id="crNotify" checked>
-                                <div class="chat-cr-toggle-track"></div>
-                            </label>
-                        </div>
-                        <div class="chat-cr-toggle-row">
-                            <div>
-                                <div class="chat-cr-toggle-label">允许后台主动发消息</div>
-                                <div class="chat-cr-toggle-desc">角色可在后台随机发送消息</div>
-                            </div><label class="chat-cr-toggle"><input type="checkbox" id="crBgMsg">
-                                <div class="chat-cr-toggle-track"></div>
-                            </label>
-                        </div>
-                    </div>
-                    <div class="chat-cr-section">
-                        <div class="chat-cr-section-title"><svg viewBox="0 0 24 24" width="14" height="14">
-                                <circle cx="12" cy="12" r="10" />
-                                <polyline points="12 6 12 12 16 14" />
-                            </svg>对话记忆</div>
-                        <div class="chat-cr-field"><label>记忆轮数（上下文保留对话数，上限100）</label>
-                            <div class="chat-cr-memory-row"><input type="range" id="crMemory" min="1" max="100"
-                                    value="20" class="chat-cr-range" oninput="updateMemoryDisplay()"><span
-                                    class="chat-cr-memory-val" id="crMemoryVal">20轮</span></div>
-                        </div>
+                </div>
+                <div class="chat-cr-section">
+                    <div class="chat-cr-section-title"><svg viewBox="0 0 24 24" width="14" height="14">
+                            <circle cx="12" cy="12" r="10" />
+                            <polyline points="12 6 12 12 16 14" />
+                        </svg>对话记忆</div>
+                    <div class="chat-cr-field"><label>记忆轮数（上下文保留对话数，上限100）</label>
+                        <div class="chat-cr-memory-row"><input type="range" id="crMemory" min="1" max="100" value="20"
+                                class="chat-cr-range" oninput="updateMemoryDisplay()"><span class="chat-cr-memory-val"
+                                id="crMemoryVal">20轮</span></div>
                     </div>
                 </div>
             </div>
-
-            <!-- 底部Tab栏 -->
-            <div class="chat-tab-bar">
-                <div class="chat-tab-item active" data-tab="messages" onclick="switchChatTab('messages')">
-                    <svg viewBox="0 0 24 24">
-                        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
-                    </svg><span>消息</span>
-                </div>
-                <div class="chat-tab-item" data-tab="contacts" onclick="switchChatTab('contacts')"><svg
-                        viewBox="0 0 24 24">
-                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
-                        <circle cx="9" cy="7" r="4" />
-                        <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
-                        <path d="M16 3.13a4 4 0 0 1 0 7.75" />
-                    </svg><span>联系人</span></div>
-                <div class="chat-tab-item" data-tab="moments" onclick="switchChatTab('moments')"><svg
-                        viewBox="0 0 24 24">
-                        <circle cx="12" cy="12" r="10" />
-                        <line x1="12" y1="8" x2="12" y2="12" />
-                        <line x1="12" y1="16" x2="12.01" y2="16" />
-                    </svg><span>动态</span></div>
-                <div class="chat-tab-item" data-tab="me" onclick="switchChatTab('me')"><svg viewBox="0 0 24 24">
-                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-                        <circle cx="12" cy="7" r="4" />
-                    </svg><span>我</span></div>
-            </div>
-
         </div>
 
-        <!-- 自定义图标用的隐藏file input -->
-        <input type="file" id="iconCustomFile" accept="image/*" style="display:none"
-            onchange="handleIconCustomFile(event)">
+        <!-- 底部Tab栏 -->
+        <div class="chat-tab-bar">
+            <div class="chat-tab-item active" data-tab="messages" onclick="switchChatTab('messages')">
+                <svg viewBox="0 0 24 24">
+                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+                </svg><span>消息</span>
+            </div>
+            <div class="chat-tab-item" data-tab="contacts" onclick="switchChatTab('contacts')"><svg viewBox="0 0 24 24">
+                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                    <circle cx="9" cy="7" r="4" />
+                    <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+                    <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+                </svg><span>联系人</span></div>
+            <div class="chat-tab-item" data-tab="moments" onclick="switchChatTab('moments')"><svg viewBox="0 0 24 24">
+                    <circle cx="12" cy="12" r="10" />
+                    <line x1="12" y1="8" x2="12" y2="12" />
+                    <line x1="12" y1="16" x2="12.01" y2="16" />
+                </svg><span>动态</span></div>
+            <div class="chat-tab-item" data-tab="me" onclick="switchChatTab('me')"><svg viewBox="0 0 24 24">
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                    <circle cx="12" cy="7" r="4" />
+                </svg><span>我</span></div>
+        </div>
 
-        <div class="game-overlay" id="gameOverlay"></div>
-        <div class="music-overlay" id="musicOverlay"></div>
-        <div class="novel-overlay" id="novelOverlay"></div>
-        <div class="theater-overlay" id="theaterOverlay"></div>
+    </div>
 
-        <!-- ====== 论坛 Forum ====== -->
-        <div class="forum-overlay" id="forumOverlay"></div>
-        <div id="muFloatLyric" class="mu-float-widget"></div>
+    <!-- 自定义图标用的隐藏file input -->
+    <input type="file" id="iconCustomFile" accept="image/*" style="display:none" onchange="handleIconCustomFile(event)">
+
+    <div class="game-overlay" id="gameOverlay"></div>
+    <div class="music-overlay" id="musicOverlay"></div>
+    <div class="novel-overlay" id="novelOverlay"></div>
+    <div class="theater-overlay" id="theaterOverlay"></div>
+
+    <!-- ====== 论坛 Forum ====== -->
+    <div class="forum-overlay" id="forumOverlay"></div>
+    <div id="muFloatLyric" class="mu-float-widget"></div>
 
     </div> <!-- /phone-frame -->
 
@@ -1942,62 +1931,6 @@
     <script src="js/page3widget.js"></script>
     <script src="js/phonesnoop.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/jsmediatags@3.9.7/dist/jsmediatags.min.js"></script>
-
-    <script>
-        /* ★ 安卓状态栏高度修复 ★
-           安卓浏览器 env(safe-area-inset-top) 常返回 0，
-           用 JS 检测屏幕和窗口差值来估算 */
-        (function () {
-            var h = document.documentElement;
-
-            function fixAndroidStatusBar() {
-                if (!h.classList.contains('is-android')) return;
-
-                // 方法1：用 screen.height - window.innerHeight 差值（含地址栏误差，仅做估算）
-                // 方法2：更可靠——直接读 CSS env() 是否生效
-                var testEl = document.createElement('div');
-                testEl.style.cssText = 'position:fixed;top:env(safe-area-inset-top,0px);left:0;width:1px;height:1px;pointer-events:none;visibility:hidden;';
-                document.body.appendChild(testEl);
-                var top = testEl.getBoundingClientRect().top;
-                document.body.removeChild(testEl);
-
-                // 如果 env() 有效且 > 0，就用它；否则用 24px 安卓默认估算
-                var safeTop = top > 4 ? top : 24;
-                h.style.setProperty('--android-status-bar-height', safeTop + 'px');
-            }
-
-            // DOM ready 后执行
-            if (document.readyState === 'loading') {
-                document.addEventListener('DOMContentLoaded', fixAndroidStatusBar);
-            } else {
-                fixAndroidStatusBar();
-            }
-
-            // 旋转/resize 后重新计算
-            window.addEventListener('resize', fixAndroidStatusBar);
-
-            // ★ 尝试触发浏览器全屏 API（安卓 Chrome 支持）★
-            function tryRequestFullscreen() {
-                var el = document.documentElement;
-                var fn = el.requestFullscreen
-                    || el.webkitRequestFullscreen
-                    || el.mozRequestFullScreen
-                    || el.msRequestFullscreen;
-                if (fn) {
-                    // 必须在用户手势里调用，所以监听第一次 touch
-                    document.addEventListener('touchstart', function onFirstTouch() {
-                        document.removeEventListener('touchstart', onFirstTouch);
-                        fn.call(el).catch(function () { });
-                    }, { once: true, passive: true });
-                }
-            }
-
-            // 仅安卓、非 standalone 模式下尝试全屏
-            if (h.classList.contains('is-android') && !h.classList.contains('is-standalone')) {
-                tryRequestFullscreen();
-            }
-        })();
-    </script>
 
 
 
