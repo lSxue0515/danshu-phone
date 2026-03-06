@@ -2302,9 +2302,19 @@ function updateLastMsg(role) {
 var _chatGenerating = false;
 
 function handleChatInputKeydown(event) {
-    if (!event || event.key !== 'Enter') return;
+    if (!event) return;
+    var key = event.key;
+    var isEnterLike =
+        key === 'Enter' ||
+        key === 'Go' ||
+        key === 'Send' ||
+        key === 'Done' ||
+        key === 'Search' ||
+        key === 'Next';
+
+    if (!isEnterLike) return;
     if (event.shiftKey || event.ctrlKey || event.altKey || event.metaKey) return;
-    if (event.isComposing || event.keyCode === 229) return;
+    if (event.isComposing) return;
 
     event.preventDefault();
     event.stopPropagation();
