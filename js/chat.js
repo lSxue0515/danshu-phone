@@ -1150,7 +1150,7 @@ function openConversation(rid) {
     // 输入行 — 续写在左，发送在右
     h += '<form class="chat-conv-input-row" id="chatInputRow" onsubmit="event.preventDefault(); sendChatMessage(); return false;">';
     h += '<div class="chat-conv-action-btn" onclick="toggleStickerPanel()" title="表情包"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg></div>';
-    h += '<input class="chat-conv-input" id="chatConvInput" type="text" placeholder="说点什么..." enterkeyhint="send" onkeydown="if(event.key===\'Enter\'){sendChatMessage();event.preventDefault();return false;}">';
+    h += '<input class="chat-conv-input" id="chatConvInput" type="text" placeholder="说点什么..." enterkeyhint="send" onkeydown="return handleChatSoftEnter(event)" onkeypress="return handleChatSoftEnter(event)" onkeyup="return handleChatSoftEnter(event)">';
     // 续写键
     h += '<div class="chat-conv-action-btn continue-btn" onclick="continueChat()" title="续写"><svg viewBox="0 0 24 24"><polyline points="13 17 18 12 13 7"/><polyline points="6 17 11 12 6 7"/></svg></div>';
     // 发送键
@@ -2300,6 +2300,55 @@ function updateLastMsg(role) {
    ================================================================ */
 
 var _chatGenerating = false;
+var _chatSoftEnterLockUntil = 0;
+
+function shouldSendOnInputEnter(event) {
+    if (!event) return false;
+
+    var key = event.key;
+    var code = event.code;
+    var keyCode = event.keyCode;
+    var which = event.which;
+    var isEnterLike =
+        key === 'Enter' ||
+        key === 'Go' ||
+        key === 'Send' ||
+        key === 'Done' ||
+        key === 'Search' ||
+        code === 'Enter' ||
+        keyCode === 13 ||
+        which === 13;
+
+    if (!isEnterLike) return false;
+    if (event.shiftKey || event.ctrlKey || event.altKey || event.metaKey) return false;
+    if (event.isComposing) return false;
+
+    return true;
+}
+
+function handleChatSoftEnter(event) {
+    if (!shouldSendOnInputEnter(event)) return true;
+
+    var now = Date.now();
+    if (now < _chatSoftEnterLockUntil) {
+        event.preventDefault();
+        event.stopPropagation();
+        if (typeof event.stopImmediatePropagation === 'function') {
+            event.stopImmediatePropagation();
+        }
+        return false;
+    }
+    _chatSoftEnterLockUntil = now + 120;
+
+    event.preventDefault();
+    event.stopPropagation();
+    if (typeof event.stopImmediatePropagation === 'function') {
+        event.stopImmediatePropagation();
+    }
+
+    sendChatMessage();
+    return false;
+}
 
 function handleChatInputKeydown(event) {
     if (!event) return;
