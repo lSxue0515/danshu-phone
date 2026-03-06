@@ -4,14 +4,26 @@
    ============================================ */
 
 var _bfActiveCssId = '';
+var _bfOpenArmedUntil = 0;
+
+document.addEventListener('pointerdown', function (event) {
+    var target = event.target;
+    if (!target || !target.closest) return;
+    if (target.closest('[onclick*="openBeautifyPage()"]')) {
+        _bfOpenArmedUntil = Date.now() + 1500;
+    }
+}, true);
 
 /* ========== 打开 / 关闭 ========== */
 function openBeautifyPage() {
+    if (Date.now() > _bfOpenArmedUntil) return;
+
     var conv = document.getElementById('chatConversation');
     if (conv && conv.classList.contains('show')) return;
 
     var page = document.getElementById('beautifyPage');
     if (!page) return;
+    _bfOpenArmedUntil = 0;
     page.setAttribute('aria-hidden', 'false');
     loadBeautifyState();
     renderCssPresetList();
