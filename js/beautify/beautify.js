@@ -12,6 +12,7 @@ function openBeautifyPage() {
 
     var page = document.getElementById('beautifyPage');
     if (!page) return;
+    page.setAttribute('aria-hidden', 'false');
     loadBeautifyState();
     renderCssPresetList();
     refreshWallpaperPreviewBf();
@@ -21,7 +22,9 @@ function openBeautifyPage() {
 
 function closeBeautifyPage() {
     var page = document.getElementById('beautifyPage');
-    if (page) page.classList.remove('show');
+    if (!page) return;
+    page.classList.remove('show');
+    page.setAttribute('aria-hidden', 'true');
 }
 
 /* ========== 本地存储键 ========== */
