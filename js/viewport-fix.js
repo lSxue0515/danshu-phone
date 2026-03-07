@@ -170,12 +170,18 @@
         keyboardFrame = requestAnimationFrame(function () {
             var body = getChatBody();
             var keepPinned = shouldKeepBodyPinned(body);
+            var prevInset = lastKeyboardInset;
             keyboardFrame = 0;
             lockChatAppHeight();
             syncChatViewportMetrics();
-            applyChatKeyboardInset(getChatKeyboardInset());
+            var nextInset = getChatKeyboardInset();
+            applyChatKeyboardInset(nextInset);
 
-            if (body && keepPinned) body.scrollTop = body.scrollHeight;
+            if (body && keepPinned) {
+                if (!isIOS || prevInset < 0 || Math.abs(nextInset - prevInset) > 6) {
+                    body.scrollTop = body.scrollHeight;
+                }
+            }
         });
     }
 
