@@ -14,13 +14,35 @@
     if (isIOS && !root.classList.contains('is-ios')) root.classList.add('is-ios');
     if (isAndroid && !root.classList.contains('is-android')) root.classList.add('is-android');
 
+    function isTextInputElement(el) {
+        if (!el || el.disabled || el.readOnly) return false;
+        var tag = (el.tagName || '').toUpperCase();
+        return tag === 'INPUT' || tag === 'TEXTAREA' || el.isContentEditable;
+    }
+
+    function isKeyboardViewportResize() {
+        if (!isIOS || !window.visualViewport) return false;
+        if (!isTextInputElement(document.activeElement)) return false;
+
+        var vvHeight = Math.round(window.visualViewport.height || 0);
+        var innerHeight = Math.round(window.innerHeight || 0);
+        var clientHeight = Math.round(document.documentElement.clientHeight || 0);
+        var baseHeight = Math.max(lastH || 0, innerHeight || 0, clientHeight || 0);
+        return baseHeight > 0 && vvHeight > 0 && baseHeight - vvHeight > 120;
+    }
+
     function getViewportHeight() {
-        var h = window.innerHeight;
-        if (window.visualViewport && window.visualViewport.height) h = window.visualViewport.height;
+        var h = Math.round(window.innerHeight || 0);
+        var clientHeight = Math.round(document.documentElement.clientHeight || 0);
 
         if (isAndroid) {
-            var ch = document.documentElement.clientHeight;
-            if (ch > 0 && ch < h) h = ch;
+            if (clientHeight > 0 && (!h || clientHeight < h)) h = clientHeight;
+        } else if (clientHeight > h) {
+            h = clientHeight;
+        }
+
+        if (!isIOS && window.visualViewport && window.visualViewport.height) {
+            h = Math.round(window.visualViewport.height);
         }
 
         return Math.round(h);
@@ -146,6 +168,7 @@
             lockChatAppHeight();
             return;
         }
+        if (isKeyboardViewportResize()) return;
         var h = getViewportHeight();
         if (Math.abs(h - lastH) < 1) return;
         lastH = h;
