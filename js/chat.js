@@ -1433,6 +1433,7 @@ function openConversation(rid) {
     h += '<input type="file" id="chatCameraPickFile" style="display:none" accept="image/*" capture="environment" onchange="handleChatImagePick(event)">';
 
     conv.innerHTML = h;
+    conv.style.display = '';
     conv.classList.remove('chat-keyboard-active');
     conv.style.setProperty('--chat-conv-bottom-bar-height', '0px');
     conv.style.setProperty('--chat-keyboard-inset', '0px');
@@ -1616,6 +1617,7 @@ function closeChatConversation() {
         c.style.transition = 'none';
         c.classList.remove('show');
         c.classList.remove('chat-keyboard-active');
+        c.style.display = 'none';
         c.style.setProperty('--chat-conv-bottom-bar-height', '0px');
         c.style.setProperty('--chat-keyboard-inset', '0px');
         c.style.backgroundImage = '';
