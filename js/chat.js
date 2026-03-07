@@ -1058,19 +1058,8 @@ function deleteRole(id) { _chatRoles = _chatRoles.filter(function (r) { return r
    对话页 — 完全重构
    ================================================================ */
 function setChatConversationScrollLock(locked) {
-    var root = document.documentElement;
-    var body = document.body;
-    var overlay = document.getElementById('chatAppOverlay');
-    var phoneFrame = document.getElementById('phoneFrame');
-    var pagesViewport = document.getElementById('pagesViewport');
-    var pagesTrack = document.getElementById('pagesTrack');
-
-    if (root) root.classList.toggle('chat-conv-open', !!locked);
-    if (body) body.classList.toggle('chat-conv-open', !!locked);
-    if (overlay) overlay.classList.toggle('chat-conv-open', !!locked);
-    if (phoneFrame) phoneFrame.classList.toggle('chat-conv-open', !!locked);
-    if (pagesViewport) pagesViewport.classList.toggle('chat-conv-open', !!locked);
-    if (pagesTrack) pagesTrack.classList.toggle('chat-conv-open', !!locked);
+    var conv = document.getElementById('chatConversation');
+    if (conv) conv.classList.toggle('chat-conv-open', !!locked);
 }
 
 function openConversation(rid) {
@@ -1184,6 +1173,10 @@ function openConversation(rid) {
     h += '<input type="file" id="chatCameraPickFile" style="display:none" accept="image/*" capture="environment" onchange="handleChatImagePick(event)">';
 
     conv.innerHTML = h;
+    conv.classList.remove('chat-keyboard-active');
+    conv.style.setProperty('--chat-conv-bottom-bar-height', '0px');
+    conv.style.setProperty('--chat-keyboard-inset', '0px');
+    if (typeof window._chatSyncViewportMetrics === 'function') window._chatSyncViewportMetrics();
     setChatConversationScrollLock(true);
     conv.classList.add('show');
     var chatInput = document.getElementById('chatConvInput');
@@ -1357,6 +1350,7 @@ function closeChatImagePreview() {
 
 function closeChatConversation() {
     var c = document.getElementById('chatConversation');
+    var overlay = document.getElementById('chatAppOverlay');
     var chatInput = document.getElementById('chatConvInput');
     if (chatInput && document.activeElement === chatInput) {
         chatInput.blur();
@@ -1364,7 +1358,14 @@ function closeChatConversation() {
         window._chatInputBlur();
     }
     setChatConversationScrollLock(false);
-    if (c) { c.classList.remove('show'); setTimeout(function () { c.innerHTML = ''; }, 300); }
+    if (overlay) overlay.classList.remove('chat-keyboard-active');
+    if (c) {
+        c.classList.remove('show');
+        c.classList.remove('chat-keyboard-active');
+        c.style.setProperty('--chat-conv-bottom-bar-height', '0px');
+        c.style.setProperty('--chat-keyboard-inset', '0px');
+        setTimeout(function () { c.innerHTML = ''; }, 300);
+    }
     _chatCurrentConv = null;
     _chatMultiSelectMode = false; _chatMultiSelected = []; _chatQuoteData = null;
     _pendingImageData = null;
