@@ -8,6 +8,7 @@
     var listenersBound = false;
     var syncFrame = 0;
     var blurTimer = 0;
+    var viewportScrollResetTimer = 0;
     var pendingSyncReason = '';
     var viewportMetaState = {
         count: 0,
@@ -58,6 +59,28 @@
             return Math.max(0, Math.round(window.visualViewport.offsetTop || 0));
         }
         return 0;
+    }
+
+    function isIOSViewportScrollResetTarget() {
+        var ua = navigator.userAgent || '';
+        var isIOS = /iPhone|iPod|iPad/i.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+        if (!isIOS) return false;
+        return !!(window.visualViewport && /WebKit/i.test(ua));
+    }
+
+    function resetViewportScrollPosition() {
+        window.scrollTo(0, 0);
+        document.documentElement.scrollTop = 0;
+        document.body.scrollTop = 0;
+    }
+
+    function scheduleViewportScrollReset() {
+        resetViewportScrollPosition();
+        if (viewportScrollResetTimer) clearTimeout(viewportScrollResetTimer);
+        viewportScrollResetTimer = setTimeout(function () {
+            viewportScrollResetTimer = 0;
+            resetViewportScrollPosition();
+        }, 50);
     }
 
     function measureBaseHeight(ctx) {
@@ -300,6 +323,10 @@
         root.style.setProperty('--keyboard-viewport-offset-top', (keyboardActive ? viewportOffsetTop : 0) + 'px');
         root.style.height = appliedHeight + 'px';
         root.style.maxHeight = appliedHeight + 'px';
+
+        if (isIOSViewportScrollResetTarget() && (keyboardActive || (syncReason === 'viewport-resize' && ctx.keyboardTransitionActive))) {
+            scheduleViewportScrollReset();
+        }
 
         if (typeof ctx.onStateChange === 'function') ctx.onStateChange(keyboardActive, keyboardOffset);
 

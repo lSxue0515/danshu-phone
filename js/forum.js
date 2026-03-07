@@ -182,7 +182,7 @@
         window.KeyboardManager.registerKeyboardContext({
             id: 'forum-overlay',
             getRoot: function () {
-                return document.querySelector('#fmCreateModal .fm-modal, #fmPostModal .fm-modal') || document.querySelector('#forumOverlay .fm-app');
+                return document.getElementById('forumOverlay');
             },
             getScrollContainer: function () {
                 var modalBody = document.querySelector('#fmCreateModal .fm-modal-body, #fmPostModal .fm-modal-body');

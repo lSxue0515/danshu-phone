@@ -500,7 +500,7 @@ function getChatConversationOverlay() {
 }
 
 function getChatConversationRoot() {
-    return document.getElementById('chatConversationStage');
+    return getChatConversationOverlay();
 }
 
 function getChatConversationBody() {
@@ -1450,11 +1450,11 @@ function openConversation(rid) {
     conv.innerHTML = h;
     conv.style.display = '';
     conv.classList.remove('chat-keyboard-active');
-    var stage = document.getElementById('chatConversationStage');
-    if (stage) {
-        stage.classList.remove('chat-keyboard-active');
-        stage.style.setProperty('--chat-conv-bottom-bar-height', '0px');
-        stage.style.setProperty('--chat-keyboard-inset', '0px');
+    var root = getChatConversationRoot();
+    if (root) {
+        root.classList.remove('chat-keyboard-active');
+        root.style.setProperty('--chat-conv-bottom-bar-height', '0px');
+        root.style.setProperty('--chat-keyboard-inset', '0px');
     }
     conv.classList.add('show');
     if (window.KeyboardManager) window.KeyboardManager.activateKeyboardContext('chat-conversation');
