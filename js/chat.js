@@ -1057,9 +1057,76 @@ function deleteRole(id) { _chatRoles = _chatRoles.filter(function (r) { return r
 /* ================================================================
    对话页 — 完全重构
    ================================================================ */
+var _chatConvTouchStartY = 0;
+
+function onChatConvBodyTouchStart(ev) {
+    var touch = ev.touches && ev.touches[0];
+    if (!touch) return;
+    _chatConvTouchStartY = touch.clientY;
+}
+
+function onChatConvBodyTouchMove(ev) {
+    var body = ev.currentTarget;
+    var touch = ev.touches && ev.touches[0];
+    if (!body || !touch) return;
+
+    var maxScrollTop = body.scrollHeight - body.clientHeight;
+    var deltaY = touch.clientY - _chatConvTouchStartY;
+    _chatConvTouchStartY = touch.clientY;
+
+    if (maxScrollTop <= 0) {
+        ev.preventDefault();
+        return;
+    }
+
+    var atTop = body.scrollTop <= 0;
+    var atBottom = body.scrollTop >= maxScrollTop - 1;
+    if ((atTop && deltaY > 0) || (atBottom && deltaY < 0)) {
+        ev.preventDefault();
+    }
+}
+
 function setChatConversationScrollLock(locked) {
     var conv = document.getElementById('chatConversation');
+    var overlay = document.getElementById('chatAppOverlay');
+    var body = document.getElementById('chatConvBody');
+    var page = conv && conv.closest ? conv.closest('.page') : null;
     if (conv) conv.classList.toggle('chat-conv-open', !!locked);
+    if (overlay) overlay.classList.toggle('chat-conv-open', !!locked);
+
+    if (page) {
+        if (locked) {
+            page.dataset.chatOverflowY = page.style.overflowY || '';
+            page.dataset.chatOverscrollBehavior = page.style.overscrollBehavior || '';
+            page.style.overflowY = 'hidden';
+            page.style.overscrollBehavior = 'none';
+        } else {
+            page.style.overflowY = page.dataset.chatOverflowY || '';
+            page.style.overscrollBehavior = page.dataset.chatOverscrollBehavior || '';
+            delete page.dataset.chatOverflowY;
+            delete page.dataset.chatOverscrollBehavior;
+        }
+    }
+
+    if (body) {
+        if (locked) {
+            body.style.overscrollBehavior = 'contain';
+            body.style.webkitOverflowScrolling = 'touch';
+            if (!body._chatScrollGuardBound) {
+                body.addEventListener('touchstart', onChatConvBodyTouchStart, { passive: true });
+                body.addEventListener('touchmove', onChatConvBodyTouchMove, { passive: false });
+                body._chatScrollGuardBound = true;
+            }
+        } else {
+            body.style.overscrollBehavior = '';
+            body.style.webkitOverflowScrolling = '';
+            if (body._chatScrollGuardBound) {
+                body.removeEventListener('touchstart', onChatConvBodyTouchStart);
+                body.removeEventListener('touchmove', onChatConvBodyTouchMove);
+                body._chatScrollGuardBound = false;
+            }
+        }
+    }
 }
 
 function openConversation(rid) {

@@ -157,12 +157,6 @@
         if (kbActive) fixKb();
     }
 
-    function onKbScroll() {
-        if (kbActive && window.visualViewport && window.visualViewport.offsetTop > 0) {
-            window.scrollTo(0, 0);
-        }
-    }
-
     function fixKb() {
         if (!kbActive || !isChatKeyboardContext()) return;
 
@@ -194,7 +188,6 @@
 
         if (isIOS && window.visualViewport) {
             window.visualViewport.addEventListener('resize', onKbResize);
-            window.visualViewport.addEventListener('scroll', onKbScroll);
             setTimeout(fixKb, 100);
             setTimeout(fixKb, 300);
             setTimeout(fixKb, 600);
@@ -214,7 +207,6 @@
 
         if (window.visualViewport) {
             window.visualViewport.removeEventListener('resize', onKbResize);
-            window.visualViewport.removeEventListener('scroll', onKbScroll);
         }
 
         setTimeout(function () {

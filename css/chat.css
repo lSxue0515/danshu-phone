@@ -43,6 +43,11 @@
     pointer-events: auto;
 }
 
+.chat-app-overlay.chat-conv-open,
+.chat-conversation.chat-conv-open {
+    overscroll-behavior: none;
+}
+
 /* ========== 顶栏 ========== */
 .chat-header {
     display: flex;
