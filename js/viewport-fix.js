@@ -35,7 +35,7 @@
     }
 
     function onKbScroll() {
-        if (window.visualViewport && window.visualViewport.offsetTop > 0) {
+        if (kbActive && window.visualViewport && window.visualViewport.offsetTop > 0) {
             window.scrollTo(0, 0);
         }
     }
@@ -46,14 +46,8 @@
         var h = getViewportHeight();
         root.style.setProperty('--app-height', h + 'px');
 
-        var conv = document.getElementById('chatConversation');
-        if (conv) conv.style.height = h + 'px';
-
         var body = document.getElementById('chatConvBody');
         if (body) body.scrollTop = body.scrollHeight;
-
-        window.scrollTo(0, 0);
-        document.body.scrollTop = 0;
     }
 
     window._chatInputFocus = function () {
@@ -83,11 +77,7 @@
             window.visualViewport.removeEventListener('scroll', onKbScroll);
         }
 
-        var conv = document.getElementById('chatConversation');
-        if (conv) conv.style.height = '';
-
         setTimeout(function () {
-            window.scrollTo(0, 0);
             setHeight();
         }, 100);
     };

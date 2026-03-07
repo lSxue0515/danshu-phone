@@ -1057,6 +1057,22 @@ function deleteRole(id) { _chatRoles = _chatRoles.filter(function (r) { return r
 /* ================================================================
    对话页 — 完全重构
    ================================================================ */
+function setChatConversationScrollLock(locked) {
+    var root = document.documentElement;
+    var body = document.body;
+    var overlay = document.getElementById('chatAppOverlay');
+    var phoneFrame = document.getElementById('phoneFrame');
+    var pagesViewport = document.getElementById('pagesViewport');
+    var pagesTrack = document.getElementById('pagesTrack');
+
+    if (root) root.classList.toggle('chat-conv-open', !!locked);
+    if (body) body.classList.toggle('chat-conv-open', !!locked);
+    if (overlay) overlay.classList.toggle('chat-conv-open', !!locked);
+    if (phoneFrame) phoneFrame.classList.toggle('chat-conv-open', !!locked);
+    if (pagesViewport) pagesViewport.classList.toggle('chat-conv-open', !!locked);
+    if (pagesTrack) pagesTrack.classList.toggle('chat-conv-open', !!locked);
+}
+
 function openConversation(rid) {
     var role = findRole(rid); if (!role) return;
     _chatCurrentConv = rid; role.unread = 0; saveChatRoles();
@@ -1168,9 +1184,13 @@ function openConversation(rid) {
     h += '<input type="file" id="chatCameraPickFile" style="display:none" accept="image/*" capture="environment" onchange="handleChatImagePick(event)">';
 
     conv.innerHTML = h;
+    setChatConversationScrollLock(true);
     conv.classList.add('show');
     var chatInput = document.getElementById('chatConvInput');
-    if (chatInput) { }
+    if (chatInput) {
+        if (typeof window._chatInputFocus === 'function') chatInput.addEventListener('focus', window._chatInputFocus);
+        if (typeof window._chatInputBlur === 'function') chatInput.addEventListener('blur', window._chatInputBlur);
+    }
     // ★ 壁纸：先立即应用一次，再在 setTimeout 里补一次（双保险）
     var _wpData = loadWallpaper(rid);
     if (_wpData) {
@@ -1337,6 +1357,13 @@ function closeChatImagePreview() {
 
 function closeChatConversation() {
     var c = document.getElementById('chatConversation');
+    var chatInput = document.getElementById('chatConvInput');
+    if (chatInput && document.activeElement === chatInput) {
+        chatInput.blur();
+    } else if (typeof window._chatInputBlur === 'function') {
+        window._chatInputBlur();
+    }
+    setChatConversationScrollLock(false);
     if (c) { c.classList.remove('show'); setTimeout(function () { c.innerHTML = ''; }, 300); }
     _chatCurrentConv = null;
     _chatMultiSelectMode = false; _chatMultiSelected = []; _chatQuoteData = null;

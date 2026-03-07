@@ -5737,6 +5737,34 @@
     box-shadow: none !important;
 }
 
+@media screen and (max-width: 768px) {
+    html.chat-conv-open,
+    body.chat-conv-open,
+    html.chat-conv-open .phone-frame,
+    html.chat-conv-open .pages-viewport,
+    html.chat-conv-open .pages-track,
+    html.chat-conv-open .page,
+    .chat-app-overlay.chat-conv-open,
+    .chat-app-overlay.chat-conv-open .chat-body {
+        overflow: hidden !important;
+        overscroll-behavior: none;
+    }
+
+    .chat-conversation {
+        min-height: 0;
+        overscroll-behavior: contain;
+    }
+
+    .chat-conv-body {
+        min-height: 0;
+        overscroll-behavior: contain;
+    }
+
+    .chat-conv-bottombar {
+        padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+    }
+}
+
 /* ===== 真机全屏适配：去除模拟器圆角 ===== */
 .chat-app-overlay,
 .chat-conversation,
