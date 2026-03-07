@@ -177,10 +177,14 @@
     }
 
     function onKbResize() {
+        if (window.__disableLegacyChatKeyboard) return;
+        if (window.KeyboardManager && window.KeyboardManager.getActiveContextId && window.KeyboardManager.getActiveContextId() === 'chat-conversation') return;
         if (kbActive) fixKb();
     }
 
     function fixKb() {
+        if (window.__disableLegacyChatKeyboard) return;
+        if (window.KeyboardManager && window.KeyboardManager.getActiveContextId && window.KeyboardManager.getActiveContextId() === 'chat-conversation') return;
         if (!kbActive || !isChatKeyboardContext()) return;
 
         if (keyboardFrame) cancelAnimationFrame(keyboardFrame);
@@ -203,6 +207,8 @@
     }
 
     window._chatInputFocus = function () {
+        if (window.__disableLegacyChatKeyboard) return;
+        if (window.KeyboardManager && window.KeyboardManager.getActiveContextId && window.KeyboardManager.getActiveContextId() === 'chat-conversation') return;
         chatLockedAppHeight = getAppliedAppHeight();
         kbActive = true;
         lockChatAppHeight();
@@ -225,6 +231,8 @@
     };
 
     window._chatInputBlur = function () {
+        if (window.__disableLegacyChatKeyboard) return;
+        if (window.KeyboardManager && window.KeyboardManager.getActiveContextId && window.KeyboardManager.getActiveContextId() === 'chat-conversation') return;
         kbActive = false;
         resetChatKeyboardInset();
 

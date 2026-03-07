@@ -13,6 +13,10 @@ var _chatPersonas = [];
 var _chatActivePersonaId = '';
 var _peEditingId = null;
 var _peAvatarData = '';
+var _chatConversationKeyboardContextReady = false;
+var _chatConversationBottomBarResizeObserver = null;
+var _chatConversationStructureObserver = null;
+var _chatConversationObservedBottomBar = null;
 
 var _chatWorldBookLib = [];
 var _chatStickerLib = [];
@@ -488,7 +492,205 @@ function deletePersona(id) {
 /* ================================================================
    人设编辑器
    ================================================================ */
+var _chatEditorKeyboardContextsReady = false;
+
+function getChatConversationRoot() {
+    return document.getElementById('chatConversation');
+}
+
+function getChatConversationBody() {
+    return document.getElementById('chatConvBody');
+}
+
+function getChatConversationBottomBar() {
+    var root = getChatConversationRoot();
+    return root ? root.querySelector('.chat-conv-bottombar') : null;
+}
+
+function getChatConversationInput() {
+    return document.getElementById('chatConvInput');
+}
+
+function getChatConversationBottomGap() {
+    var body = getChatConversationBody();
+    if (!body) return 0;
+    return Math.max(0, body.scrollHeight - body.clientHeight - body.scrollTop);
+}
+
+function syncChatConversationBottomBarHeight() {
+    var conv = getChatConversationRoot();
+    var bottomBar = getChatConversationBottomBar();
+    if (!conv) return;
+    if (!bottomBar) {
+        conv.style.setProperty('--chat-conv-bottom-bar-height', '0px');
+        return;
+    }
+
+    var styles = window.getComputedStyle(bottomBar);
+    var marginTop = parseFloat(styles.marginTop) || 0;
+    var marginBottom = parseFloat(styles.marginBottom) || 0;
+    var totalHeight = Math.round(bottomBar.offsetHeight + marginTop + marginBottom);
+    conv.style.setProperty('--chat-conv-bottom-bar-height', totalHeight + 'px');
+}
+
+function disconnectChatConversationKeyboardObservers() {
+    if (_chatConversationBottomBarResizeObserver) {
+        _chatConversationBottomBarResizeObserver.disconnect();
+        _chatConversationBottomBarResizeObserver = null;
+    }
+    _chatConversationObservedBottomBar = null;
+    if (_chatConversationStructureObserver) {
+        _chatConversationStructureObserver.disconnect();
+        _chatConversationStructureObserver = null;
+    }
+}
+
+function refreshChatConversationKeyboardContext() {
+    syncChatConversationBottomBarHeight();
+    if (window.KeyboardManager) window.KeyboardManager.refreshKeyboardContext('chat-conversation', 'bottom-bar-resize');
+}
+
+function bindChatConversationKeyboardObservers() {
+    disconnectChatConversationKeyboardObservers();
+    syncChatConversationBottomBarHeight();
+
+    var conv = getChatConversationRoot();
+    if (!conv) return;
+
+    var bindBottomBarObserver = function () {
+        var bottomBar = getChatConversationBottomBar();
+        if (!bottomBar || typeof ResizeObserver !== 'function') return;
+        if (_chatConversationObservedBottomBar === bottomBar) return;
+        if (_chatConversationBottomBarResizeObserver) _chatConversationBottomBarResizeObserver.disconnect();
+        _chatConversationBottomBarResizeObserver = new ResizeObserver(function () {
+            refreshChatConversationKeyboardContext();
+        });
+        _chatConversationBottomBarResizeObserver.observe(bottomBar);
+        _chatConversationObservedBottomBar = bottomBar;
+    };
+
+    bindBottomBarObserver();
+
+    if (typeof MutationObserver === 'function') {
+        _chatConversationStructureObserver = new MutationObserver(function (mutations) {
+            var bottomBarChanged = false;
+            for (var i = 0; i < mutations.length; i++) {
+                var mutation = mutations[i];
+                for (var j = 0; j < mutation.addedNodes.length; j++) {
+                    var added = mutation.addedNodes[j];
+                    if (added === _chatConversationObservedBottomBar || (added.classList && added.classList.contains('chat-conv-bottombar'))) {
+                        bottomBarChanged = true;
+                        break;
+                    }
+                }
+                if (bottomBarChanged) break;
+                for (var k = 0; k < mutation.removedNodes.length; k++) {
+                    var removed = mutation.removedNodes[k];
+                    if (removed === _chatConversationObservedBottomBar || (removed.classList && removed.classList.contains('chat-conv-bottombar'))) {
+                        bottomBarChanged = true;
+                        break;
+                    }
+                }
+                if (bottomBarChanged) break;
+            }
+            if (!bottomBarChanged) return;
+            bindBottomBarObserver();
+            refreshChatConversationKeyboardContext();
+        });
+        _chatConversationStructureObserver.observe(conv, { childList: true });
+    }
+}
+
+function ensureChatConversationKeyboardContext() {
+    if (_chatConversationKeyboardContextReady || !window.KeyboardManager) return;
+
+    window.KeyboardManager.registerKeyboardContext({
+        id: 'chat-conversation',
+        getRoot: getChatConversationRoot,
+        getScrollContainer: getChatConversationBody,
+        getMessageScroller: getChatConversationBody,
+        getBottomBar: getChatConversationBottomBar,
+        getInputs: function () {
+            var input = getChatConversationInput();
+            return input ? [input] : [];
+        },
+        isVisible: function () {
+            var root = getChatConversationRoot();
+            return !!(root && root.classList.contains('show'));
+        },
+        scrollStrategy: 'message-flow',
+        preserveBottomAnchor: true,
+        bottomStickThreshold: 72,
+        shouldStickToBottom: function () {
+            return getChatConversationBottomGap() <= 72;
+        },
+        onBeforeSync: function () {
+            syncChatConversationBottomBarHeight();
+        },
+        onStateChange: function (keyboardActive, keyboardOffset) {
+            var conv = getChatConversationRoot();
+            var overlay = document.getElementById('chatAppOverlay');
+            if (!conv) return;
+            conv.classList.toggle('chat-keyboard-active', !!keyboardActive);
+            conv.style.setProperty('--chat-keyboard-inset', (keyboardActive ? keyboardOffset : 0) + 'px');
+            if (overlay) overlay.classList.toggle('chat-keyboard-active', !!keyboardActive);
+        },
+        onActivate: function () {
+            bindChatConversationKeyboardObservers();
+            refreshChatConversationKeyboardContext();
+        },
+        onDeactivate: function () {
+            disconnectChatConversationKeyboardObservers();
+            var conv = getChatConversationRoot();
+            var overlay = document.getElementById('chatAppOverlay');
+            if (conv) {
+                conv.classList.remove('chat-keyboard-active');
+                conv.style.setProperty('--chat-conv-bottom-bar-height', '0px');
+                conv.style.setProperty('--chat-keyboard-inset', '0px');
+            }
+            if (overlay) overlay.classList.remove('chat-keyboard-active');
+        }
+    });
+
+    _chatConversationKeyboardContextReady = true;
+}
+
+function ensureChatEditorKeyboardContexts() {
+    if (_chatEditorKeyboardContextsReady || !window.KeyboardManager) return;
+
+    window.KeyboardManager.registerKeyboardContext({
+        id: 'chat-persona-editor',
+        getRoot: function () { return document.getElementById('chatPersonaEditor'); },
+        getScrollContainer: function () { return document.querySelector('#chatPersonaEditor .chat-pe-body'); },
+        getInputs: function () {
+            var root = document.getElementById('chatPersonaEditor');
+            return root ? root.querySelectorAll('.chat-pe-input, .chat-pe-textarea') : [];
+        },
+        isVisible: function () {
+            var root = document.getElementById('chatPersonaEditor');
+            return !!(root && root.classList.contains('show'));
+        }
+    });
+
+    window.KeyboardManager.registerKeyboardContext({
+        id: 'chat-create-role',
+        getRoot: function () { return document.getElementById('chatCreateRole'); },
+        getScrollContainer: function () { return document.querySelector('#chatCreateRole .chat-create-body'); },
+        getInputs: function () {
+            var root = document.getElementById('chatCreateRole');
+            return root ? root.querySelectorAll('.chat-cr-input, .chat-cr-textarea') : [];
+        },
+        isVisible: function () {
+            var root = document.getElementById('chatCreateRole');
+            return !!(root && root.classList.contains('show'));
+        }
+    });
+
+    _chatEditorKeyboardContextsReady = true;
+}
+
 function openPersonaEditor(editId) {
+    ensureChatEditorKeyboardContexts();
     _peEditingId = editId || null; _peAvatarData = '';
     var panel = document.getElementById('chatPersonaEditor'); if (!panel) return;
     panel.querySelector('.chat-pe-title').textContent = editId ? '编辑角色' : '新建角色';
@@ -511,9 +713,11 @@ function openPersonaEditor(editId) {
         }
     }
     panel.classList.add('show');
+    if (window.KeyboardManager) window.KeyboardManager.activateKeyboardContext('chat-persona-editor');
 }
 function closePersonaEditor() {
     var p = document.getElementById('chatPersonaEditor'); if (p) p.classList.remove('show');
+    if (window.KeyboardManager) window.KeyboardManager.deactivateKeyboardContext('chat-persona-editor');
     _peEditingId = null; _peAvatarData = '';
 }
 function selectPeGender(g) {
@@ -560,6 +764,7 @@ function savePersona() {
    创建AI聊天角色
    ================================================================ */
 function openCreateRole(editId) {
+    ensureChatEditorKeyboardContexts();
     _chatEditingRoleId = editId || null; _crAvatarData = '';
     _crMountPersona = ''; _crMountWorldBook = []; _crMountSticker = [];
     var p = document.getElementById('chatCreateRole'); if (!p) return;
@@ -609,9 +814,11 @@ function openCreateRole(editId) {
         }
     }
     p.classList.add('show');
+    if (window.KeyboardManager) window.KeyboardManager.activateKeyboardContext('chat-create-role');
 }
 function closeCreateRole() {
     var p = document.getElementById('chatCreateRole'); if (p) p.classList.remove('show');
+    if (window.KeyboardManager) window.KeyboardManager.deactivateKeyboardContext('chat-create-role');
     _chatEditingRoleId = null; _crAvatarData = ''; closeMountModal();
 }
 function selectRoleGender(g) {
@@ -1090,23 +1297,8 @@ function setChatConversationScrollLock(locked) {
     var conv = document.getElementById('chatConversation');
     var overlay = document.getElementById('chatAppOverlay');
     var body = document.getElementById('chatConvBody');
-    var page = conv && conv.closest ? conv.closest('.page') : null;
     if (conv) conv.classList.toggle('chat-conv-open', !!locked);
     if (overlay) overlay.classList.toggle('chat-conv-open', !!locked);
-
-    if (page) {
-        if (locked) {
-            page.dataset.chatOverflowY = page.style.overflowY || '';
-            page.dataset.chatOverscrollBehavior = page.style.overscrollBehavior || '';
-            page.style.overflowY = 'hidden';
-            page.style.overscrollBehavior = 'none';
-        } else {
-            page.style.overflowY = page.dataset.chatOverflowY || '';
-            page.style.overscrollBehavior = page.dataset.chatOverscrollBehavior || '';
-            delete page.dataset.chatOverflowY;
-            delete page.dataset.chatOverscrollBehavior;
-        }
-    }
 
     if (body) {
         if (locked) {
@@ -1133,6 +1325,7 @@ function openConversation(rid) {
     var role = findRole(rid); if (!role) return;
     _chatCurrentConv = rid; role.unread = 0; saveChatRoles();
     _chatMultiSelectMode = false; _chatMultiSelected = []; _chatQuoteData = null;
+    ensureChatConversationKeyboardContext();
 
     var conv = document.getElementById('chatConversation'); if (!conv) return;
     var dn = esc(role.remark || role.name);
@@ -1243,14 +1436,10 @@ function openConversation(rid) {
     conv.classList.remove('chat-keyboard-active');
     conv.style.setProperty('--chat-conv-bottom-bar-height', '0px');
     conv.style.setProperty('--chat-keyboard-inset', '0px');
-    if (typeof window._chatSyncViewportMetrics === 'function') window._chatSyncViewportMetrics();
-    setChatConversationScrollLock(true);
     conv.classList.add('show');
-    var chatInput = document.getElementById('chatConvInput');
-    if (chatInput) {
-        if (typeof window._chatInputFocus === 'function') chatInput.addEventListener('focus', window._chatInputFocus);
-        if (typeof window._chatInputBlur === 'function') chatInput.addEventListener('blur', window._chatInputBlur);
-    }
+    if (window.KeyboardManager) window.KeyboardManager.activateKeyboardContext('chat-conversation');
+    setChatConversationScrollLock(true);
+    refreshChatConversationKeyboardContext();
     // ★ 壁纸：先立即应用一次，再在 setTimeout 里补一次（双保险）
     var _wpData = loadWallpaper(rid);
     if (_wpData) {
@@ -1419,11 +1608,8 @@ function closeChatConversation() {
     var c = document.getElementById('chatConversation');
     var overlay = document.getElementById('chatAppOverlay');
     var chatInput = document.getElementById('chatConvInput');
-    if (chatInput && document.activeElement === chatInput) {
-        chatInput.blur();
-    } else if (typeof window._chatInputBlur === 'function') {
-        window._chatInputBlur();
-    }
+    if (chatInput && document.activeElement === chatInput) chatInput.blur();
+    if (window.KeyboardManager) window.KeyboardManager.deactivateKeyboardContext('chat-conversation');
     setChatConversationScrollLock(false);
     if (overlay) overlay.classList.remove('chat-keyboard-active');
     if (c) {

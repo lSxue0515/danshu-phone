@@ -4,6 +4,25 @@
    ============================================ */
 
 var _bfActiveCssId = '';
+var _bfKeyboardContextReady = false;
+
+function ensureBeautifyKeyboardContext() {
+    if (_bfKeyboardContextReady || !window.KeyboardManager) return;
+    window.KeyboardManager.registerKeyboardContext({
+        id: 'beautify-page',
+        getRoot: function () { return document.getElementById('beautifyPage'); },
+        getScrollContainer: function () { return document.querySelector('#beautifyPage .beautify-body'); },
+        getInputs: function () {
+            var root = document.getElementById('beautifyPage');
+            return root ? root.querySelectorAll('.beautify-input, .beautify-textarea') : [];
+        },
+        isVisible: function () {
+            var root = document.getElementById('beautifyPage');
+            return !!(root && root.classList.contains('show'));
+        }
+    });
+    _bfKeyboardContextReady = true;
+}
 
 /* ========== 打开 / 关闭 ========== */
 function openBeautifyPage() {
@@ -12,17 +31,20 @@ function openBeautifyPage() {
 
     var page = document.getElementById('beautifyPage');
     if (!page) return;
+    ensureBeautifyKeyboardContext();
     page.setAttribute('aria-hidden', 'false');
     loadBeautifyState();
     renderCssPresetList();
     refreshWallpaperPreviewBf();
     setTimeout(function () { liveUpdateBubblePreview(); }, 100);
     page.classList.add('show');
+    if (window.KeyboardManager) window.KeyboardManager.activateKeyboardContext('beautify-page');
 }
 
 function closeBeautifyPage() {
     var page = document.getElementById('beautifyPage');
     if (!page) return;
+    if (window.KeyboardManager) window.KeyboardManager.deactivateKeyboardContext('beautify-page');
     page.classList.remove('show');
     page.setAttribute('aria-hidden', 'true');
 }

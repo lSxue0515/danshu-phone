@@ -21,6 +21,7 @@
     pointer-events: none;
     transform: translateX(100%);
     transition: transform 0.4s cubic-bezier(0.32, 0.72, 0, 1);
+    --keyboard-offset: 0px;
 }
 
 .beautify-page.show {
@@ -28,6 +29,17 @@
     visibility: visible;
     pointer-events: auto;
     transform: translateX(0);
+}
+
+.beautify-page.keyboard-managed {
+    overflow: hidden;
+}
+
+.beautify-page.keyboard-active {
+    transform: translateX(0);
+    transition: none;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
 }
 
 /* ===== 顶栏 ===== */
@@ -92,6 +104,19 @@
     flex-direction: column;
     gap: 16px;
     -webkit-overflow-scrolling: touch;
+}
+
+.beautify-page.keyboard-active .beautify-body {
+    padding-bottom: calc(40px + var(--keyboard-offset, 0px));
+    scroll-padding-bottom: calc(24px + var(--keyboard-offset, 0px));
+}
+
+.beautify-page.keyboard-active .beautify-header,
+.beautify-page.keyboard-active .beautify-section,
+.beautify-page.keyboard-active .beautify-textarea,
+.beautify-page.keyboard-active .beautify-input {
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
 }
 
 /* ===== 毛玻璃板块 ===== */
