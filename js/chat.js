@@ -17,6 +17,7 @@ var _chatConversationKeyboardContextReady = false;
 var _chatConversationBottomBarResizeObserver = null;
 var _chatConversationStructureObserver = null;
 var _chatConversationObservedBottomBar = null;
+var _chatConversationDeferredRenderTimer = 0;
 
 var _chatWorldBookLib = [];
 var _chatStickerLib = [];
@@ -1326,6 +1327,10 @@ function openConversation(rid) {
     _chatCurrentConv = rid; role.unread = 0; saveChatRoles();
     _chatMultiSelectMode = false; _chatMultiSelected = []; _chatQuoteData = null;
     ensureChatConversationKeyboardContext();
+    if (_chatConversationDeferredRenderTimer) {
+        clearTimeout(_chatConversationDeferredRenderTimer);
+        _chatConversationDeferredRenderTimer = 0;
+    }
 
     var conv = document.getElementById('chatConversation'); if (!conv) return;
     var dn = esc(role.remark || role.name);
@@ -1447,7 +1452,10 @@ function openConversation(rid) {
         var _b = document.getElementById('chatConvBody');
         if (_b) applyConvWallpaper(_wpData);
     }
-    setTimeout(function () {
+    _chatConversationDeferredRenderTimer = setTimeout(function () {
+        _chatConversationDeferredRenderTimer = 0;
+        if (_chatCurrentConv !== rid) return;
+        if (!conv.classList.contains('show')) return;
         var b = document.getElementById('chatConvBody');
         if (b) {
             b.scrollTop = b.scrollHeight;
@@ -1609,6 +1617,10 @@ function closeChatConversation() {
     var c = document.getElementById('chatConversation');
     var overlay = document.getElementById('chatAppOverlay');
     var chatInput = document.getElementById('chatConvInput');
+    if (_chatConversationDeferredRenderTimer) {
+        clearTimeout(_chatConversationDeferredRenderTimer);
+        _chatConversationDeferredRenderTimer = 0;
+    }
     if (chatInput && document.activeElement === chatInput) chatInput.blur();
     if (window.KeyboardManager) window.KeyboardManager.deactivateKeyboardContext('chat-conversation');
     setChatConversationScrollLock(false);
